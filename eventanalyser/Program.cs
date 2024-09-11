@@ -49,27 +49,43 @@
 
             CancellationToken cancellationToken = new();
 
-            await using var subscription = eventStoreClient.SubscribeToAll(FromAll.Start, filterOptions: filterOptions,
-                                                                           cancellationToken: cancellationToken);
+            //TODO: Improve this (signal?)
+            while (true) {
+                try {
+                    Position? position=null;
 
-            await foreach (var message in subscription.Messages.WithCancellation(cancellationToken)) {
-                switch (message) {
-                    case StreamMessage.Event(var @event):
-                        state = await projection.Handle(@event);
-                        break;
+                    FromAll fromAll = position switch {
+                        null => FromAll.Start,
+                        _ => FromAll.After(position.GetValueOrDefault())
+                    };
 
-                    case StreamMessage.CaughtUp:
-                        Console.WriteLine("Caught Up");
-                        break;
-                }
+                    await using var subscription = eventStoreClient.SubscribeToAll(fromAll, filterOptions: filterOptions,
+                                                                                   cancellationToken: cancellationToken);
 
-                if (message is StreamMessage.Event || message is StreamMessage.CaughtUp) {
-                    if (state.Count % options.CheckPointCount == 0 || message is StreamMessage.CaughtUp) {
-                        await Program.SaveState(state);
+                    await foreach (var message in subscription.Messages.WithCancellation(cancellationToken)) {
+                        switch (message) {
+                            case StreamMessage.Event(var @event):
+                                position = @event.OriginalPosition;
+                                state = await projection.Handle(@event);
+                                break;
+
+                            case StreamMessage.CaughtUp:
+                                Console.WriteLine("Caught Up");
+                                break;
+                        }
+
+                        if (message is StreamMessage.Event || message is StreamMessage.CaughtUp) {
+                            if (state.Count % options.CheckPointCount == 0 || message is StreamMessage.CaughtUp) {
+                                await Program.SaveState(state);
+                            }
+                        }
+
+                        //TODO: Dump final state to console as well?
                     }
                 }
-
-                //TODO: Dump final state to console as well?
+                catch(Exception e) {
+                    Console.WriteLine(e);
+                }
             }
 
             Console.ReadKey();
