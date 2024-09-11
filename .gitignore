@@ -3,3 +3,6 @@
 ################################################################################
 
 /.vs
+/eventanalyser/.vs
+/eventanalyser/bin/Debug/net7.0
+/eventanalyser/obj
