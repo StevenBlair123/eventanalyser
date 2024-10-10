@@ -4,23 +4,17 @@ namespace eventanalyser.Projections;
 
 using EventStore.Client;
 using Newtonsoft.Json;
+using String = System.String;
 
 public class EventInfo {
-    public ulong SizeInBytesJson { get; set; }
     public String Type { get; set; }
     public UInt64 Count { get; set; }
     public Double SizeInMegabytes => this.SizeInBytes / (1024.0 * 1024.0);
-    public UInt64 SizeInBytes { get; set; }
+    public Int64 SizeInBytes { get; set; }
     public Int32 AverageSizePerEventInBytes => this.Count > 0 ? (Int32)Math.Ceiling((Double)this.SizeInBytes / this.Count) : 0;
 
-    public EventInfo(String type,
-                     UInt64 count,
-                     UInt64 sizeInBytes,
-                     UInt64 sizeInBytesJson) {
-        SizeInBytesJson = sizeInBytesJson;
-        this.Count = count;
+    public EventInfo(String type) {
         this.Type = type;
-        this.SizeInBytes += sizeInBytes;
     }
 }
 
@@ -77,27 +71,24 @@ public class EventTypeSizeProjection : Projection<EventTypeSizeState> {
             LastEventDate = @event.Event.Created
         };
         if (!newState.EventInfo.ContainsKey(@event.OriginalEvent.EventType)) {
-            newState.EventInfo.Add(@event.OriginalEvent.EventType, new EventInfo(@event.OriginalEvent.EventType, 0, 0, 0));
+            newState.EventInfo.Add(@event.OriginalEvent.EventType, new EventInfo(@event.OriginalEvent.EventType));
         }
 
         //TODO: We are only counting Data.Length but should we look at including EventId / Event Type (or perhaps the whole ResolvedEvent)
         //Safely perform the update
         EventInfo e = state.EventInfo[@event.OriginalEvent.EventType];
+
+        //Previous size calculation was ultimately flawed.
+        //The routine below was picked out the ES code base
         //UInt64 newSize = e.SizeInBytes += (UInt64)@event.OriginalEvent.Data.Length;
-        //ulong newSizeJson = e.SizeInBytes += (ulong)JsonConvert.SerializeObject(@event).Length;
-        //var jsonString = JsonConvert.SerializeObject(@event);
-        //ulong newSizeJson  = (ulong)System.Text.Encoding.UTF8.GetByteCount(jsonString);
+        Int64 newSize =SizeOnDisk(@event.Event.EventType, @event.OriginalEvent.Data.ToArray(), @event.OriginalEvent.Metadata.ToArray());
 
-
-        newState.EventInfo[@event.OriginalEvent.EventType] = new EventInfo(@event.OriginalEvent.EventType, 
-                                                                        ++e.Count,
-                                                                        newSize,
-                                                                        newSizeJson);
+        e.SizeInBytes += newSize;
+        e.Count += 1;
 
         return await Task.FromResult(newState);
     }
 
-    public static int SizeOnDisk(string eventType, byte[] data, byte[] metadata) =>
+    public static Int32 SizeOnDisk(String eventType, Byte[] data, Byte[] metadata) =>
         data?.Length ?? 0 + metadata?.Length ?? 0 + eventType.Length * 2;
-
 }
