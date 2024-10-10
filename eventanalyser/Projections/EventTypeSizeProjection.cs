@@ -78,10 +78,13 @@ public class EventTypeSizeProjection : Projection<EventTypeSizeState> {
         //Safely perform the update
         EventInfo e = state.EventInfo[@event.OriginalEvent.EventType];
 
+        if (@event.Event.EventType == "StoreAddedEvent") {
+
+        }
         //Previous size calculation was ultimately flawed.
         //The routine below was picked out the ES code base
         //UInt64 newSize = e.SizeInBytes += (UInt64)@event.OriginalEvent.Data.Length;
-        Int64 newSize =SizeOnDisk(@event.Event.EventType, @event.OriginalEvent.Data.ToArray(), @event.OriginalEvent.Metadata.ToArray());
+        Int64 newSize =SizeOnDisk(@event.Event.EventType, @event.OriginalEvent.Data.ToArray(), @event.OriginalEvent.Metadata.ToArray(), @event.OriginalStreamId);
 
         e.SizeInBytes += newSize;
         e.Count += 1;
@@ -89,6 +92,28 @@ public class EventTypeSizeProjection : Projection<EventTypeSizeState> {
         return await Task.FromResult(newState);
     }
 
-    public static Int32 SizeOnDisk(String eventType, Byte[] data, Byte[] metadata) =>
-        data?.Length ?? 0 + metadata?.Length ?? 0 + eventType.Length * 2;
+    public static Int32 SizeOnDisk(String eventType, Byte[] data, Byte[] metadata, String streamName) {
+        Int32 length = 0;
+
+        length += sizeof(UInt16); // Flags
+        length += sizeof(Int64);  // TransactionPosition
+        length += sizeof(Int32); // TransactionOffset
+        length += 1;// header for stream name
+        length += streamName.Length;
+        length += 16; //EventId
+        length += 16; //CorrelationId
+        length += sizeof(Int64); //TimeStamp
+        length += 1;// header for event type
+        length += eventType.Length;
+        length += sizeof(Int32); // data length header
+        length += data.Length;
+        length += sizeof(Int32); // metadata length header
+        length += metadata.Length;
+
+        return length;
+    }
+
+
+    //public static Int32 SizeOnDisk(String eventType, Byte[] data, Byte[] metadata) =>
+    //    data?.Length ?? 0 + metadata?.Length ?? 0 + eventType.Length * 2;
 }

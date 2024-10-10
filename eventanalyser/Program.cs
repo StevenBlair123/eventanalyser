@@ -104,7 +104,7 @@
                     await foreach (var message in subscription.Messages.WithCancellation(cancellationToken)) {
                         switch (message) {
                             case StreamMessage.Event(var @event):
-                                Console.WriteLine($"In handle {@event.Event.EventType}");
+                                //Console.WriteLine($"In handle {@event.Event.EventType}");
                                 state = await projection.Handle(@event);
                                 break;
 
@@ -115,6 +115,7 @@
 
                         if (message is StreamMessage.Event || message is StreamMessage.CaughtUp) {
                             if (state.Count % options.CheckPointCount == 0 || message is StreamMessage.CaughtUp) {
+                                Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} Events process {state.Count} Last Date {state.LastEventDate}");
                                 await Program.SaveState(state);
                             }
                         }
@@ -206,8 +207,6 @@
         }
 
         private static async Task SaveState<TState>(TState state) where TState : State {
-            Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} Events process {state.Count}");
-
             //TODO: Log state to screen / file?
             String json = state.GetStateAsString();
 
