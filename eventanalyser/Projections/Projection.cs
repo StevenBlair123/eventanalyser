@@ -7,7 +7,7 @@ public record State {
     public Int64 Count { get; init; }
 
     public State() {
-        
+
     }
 
     public virtual String GetStateAsString() {
@@ -20,7 +20,7 @@ public abstract class Projection<TState> where TState : State {
 
     public Int64 Position { get; set; }
 
-    public Projection(TState state) {
+    protected Projection(TState state) {
         this.State = state;
     }
 

@@ -9,7 +9,6 @@
 
     // TODO: number event remaining
     // TODO: break out at end of the target date
-    
     public enum Mode {
         Catchup = 0,
         Persistent = 1
