@@ -1,10 +1,8 @@
-﻿using System.Runtime.Serialization.Formatters.Binary;
-
-namespace eventanalyser.Projections;
+﻿namespace eventanalyser.Projections;
 
 using EventStore.Client;
 using Newtonsoft.Json;
-using String = System.String;
+using String = String;
 
 public class EventInfo {
     public String Type { get; set; }
@@ -78,9 +76,6 @@ public class EventTypeSizeProjection : Projection<EventTypeSizeState> {
         //Safely perform the update
         EventInfo e = state.EventInfo[@event.OriginalEvent.EventType];
 
-        if (@event.Event.EventType == "StoreAddedEvent") {
-
-        }
         //Previous size calculation was ultimately flawed.
         //The routine below was picked out the ES code base
         //UInt64 newSize = e.SizeInBytes += (UInt64)@event.OriginalEvent.Data.Length;
@@ -112,8 +107,4 @@ public class EventTypeSizeProjection : Projection<EventTypeSizeState> {
 
         return length;
     }
-
-
-    //public static Int32 SizeOnDisk(String eventType, Byte[] data, Byte[] metadata) =>
-    //    data?.Length ?? 0 + metadata?.Length ?? 0 + eventType.Length * 2;
 }
