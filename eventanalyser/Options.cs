@@ -18,7 +18,7 @@ public record Options {
     public Mode Mode {
         get; init;
     }
-    public UInt64 Position {
+    public int? Position {
         get; init;
     }
     public Int32 BufferSize {
@@ -27,5 +27,10 @@ public record Options {
 
     public Int32 CheckPointCount {
         get; set;
+    }
+
+    public DateTime? EventDateFilter
+    {
+        get; init;
     }
 }

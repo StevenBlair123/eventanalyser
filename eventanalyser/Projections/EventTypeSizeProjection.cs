@@ -1,4 +1,6 @@
-﻿namespace eventanalyser.Projections;
+﻿using System.Runtime.Serialization.Formatters.Binary;
+
+namespace eventanalyser.Projections;
 
 using EventStore.Client;
 using Newtonsoft.Json;
@@ -20,7 +22,8 @@ public record EventTypeSizeState : State {
     public EventTypeSizeState() : base() {
         
     }
-
+    public UInt64  SkippedEvents { get; init; }
+    public DateTime LastEventDate { get; init; }
     public Double TotalSizeInMegabytes {
         get => this.EventInfo.Sum(e => e.Value.SizeInMegabytes);
     }
@@ -30,7 +33,7 @@ public record EventTypeSizeState : State {
     }
 
     public Dictionary<String, EventInfo> EventInfo { get; set; } = new();
-
+    
     public override String GetStateAsString() {
         Dictionary<String, EventInfo> sortedEventInfo = this.EventInfo
                                                             .OrderByDescending(e => e.Value.SizeInBytes)
@@ -43,32 +46,74 @@ public record EventTypeSizeState : State {
 }
 
 public class EventTypeSizeProjection : Projection<EventTypeSizeState> {
-    public EventTypeSizeProjection(EventTypeSizeState state) : base(state) {
+    private readonly Options Options;
+
+    public EventTypeSizeProjection(EventTypeSizeState state, Options options) : base(state) {
+        Options = options;
         //TODO: Not sure how we init state yet
     }
 
     protected override async Task<EventTypeSizeState> HandleEvent(EventTypeSizeState state,
                                                                   ResolvedEvent @event) {
 
-        if (!state.EventInfo.ContainsKey(@event.OriginalEvent.EventType)) {
-            state.EventInfo.Add(@event.OriginalEvent.EventType, new EventInfo(@event.OriginalEvent.EventType));
+        if (Options.EventDateFilter.HasValue) {
+            if (@event.Event.Created.Date != Options.EventDateFilter.GetValueOrDefault().Date) {
+                ulong skipped = state.SkippedEvents;
+                var newstate = state with {
+                    SkippedEvents = skipped + 1,
+                    LastEventDate = @event.Event.Created
+                };
+                return newstate;
+            }
+        }
+
+        var newState = state with {
+            LastEventDate = @event.Event.Created
+        };
+        if (!newState.EventInfo.ContainsKey(@event.OriginalEvent.EventType)) {
+            newState.EventInfo.Add(@event.OriginalEvent.EventType, new EventInfo(@event.OriginalEvent.EventType));
         }
 
         //TODO: We are only counting Data.Length but should we look at including EventId / Event Type (or perhaps the whole ResolvedEvent)
         //Safely perform the update
         EventInfo e = state.EventInfo[@event.OriginalEvent.EventType];
 
+        if (@event.Event.EventType == "StoreAddedEvent") {
+
+        }
         //Previous size calculation was ultimately flawed.
         //The routine below was picked out the ES code base
         //UInt64 newSize = e.SizeInBytes += (UInt64)@event.OriginalEvent.Data.Length;
-        Int64 newSize =SizeOnDisk(@event.Event.EventType, @event.OriginalEvent.Data.ToArray(), @event.OriginalEvent.Metadata.ToArray());
+        Int64 newSize =SizeOnDisk(@event.Event.EventType, @event.OriginalEvent.Data.ToArray(), @event.OriginalEvent.Metadata.ToArray(), @event.OriginalStreamId);
 
         e.SizeInBytes += newSize;
         e.Count += 1;
 
-        return await Task.FromResult(state);
+        return await Task.FromResult(newState);
     }
 
-    public static Int32 SizeOnDisk(String eventType, Byte[] data, Byte[] metadata) =>
-        data?.Length ?? 0 + metadata?.Length ?? 0 + eventType.Length * 2;
+    public static Int32 SizeOnDisk(String eventType, Byte[] data, Byte[] metadata, String streamName) {
+        Int32 length = 0;
+
+        length += sizeof(UInt16); // Flags
+        length += sizeof(Int64);  // TransactionPosition
+        length += sizeof(Int32); // TransactionOffset
+        length += 1;// header for stream name
+        length += streamName.Length;
+        length += 16; //EventId
+        length += 16; //CorrelationId
+        length += sizeof(Int64); //TimeStamp
+        length += 1;// header for event type
+        length += eventType.Length;
+        length += sizeof(Int32); // data length header
+        length += data.Length;
+        length += sizeof(Int32); // metadata length header
+        length += metadata.Length;
+
+        return length;
+    }
+
+
+    //public static Int32 SizeOnDisk(String eventType, Byte[] data, Byte[] metadata) =>
+    //    data?.Length ?? 0 + metadata?.Length ?? 0 + eventType.Length * 2;
 }
