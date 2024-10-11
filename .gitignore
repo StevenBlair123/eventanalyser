@@ -6,3 +6,7 @@
 /eventanalyser/.vs
 /eventanalyser/bin/Debug/net7.0
 /eventanalyser/obj
+/eventanalyser/eventanalyser.tests/bin
+/eventanalyser/eventanalyser.tests/obj
+/eventanalyser.tests/bin/Debug/net8.0
+/eventanalyser.tests/obj
