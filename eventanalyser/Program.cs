@@ -1,5 +1,6 @@
 ﻿namespace eventanalyser {
     using System;
+    using System.Globalization;
     using System.IO;
     using System.Threading.Tasks;
     using CommandLine;
@@ -217,6 +218,18 @@
                     deleteOptions = new DeleteOptions.DeleteOrganisation(organisationId) {
                                                                                              SafeMode = safeMode
                                                                                          };
+                }
+
+                if (config.GetSection("AppSettings:DeleteOptions")["Type"] == "DeleteBefore") {
+                    String dateTimeAsString = config.GetSection("AppSettings:DeleteOptions")["BeforeDateTime"];
+
+                    DateTime beforeDateTime = DateTime.Parse(dateTimeAsString);
+
+
+                    Console.WriteLine($"BeforeDateTime: {beforeDateTime}");
+                    deleteOptions = new DeleteOptions.DeleteBefore(beforeDateTime) {
+                                                                                       SafeMode = safeMode
+                                                                                   };
                 }
             }
 

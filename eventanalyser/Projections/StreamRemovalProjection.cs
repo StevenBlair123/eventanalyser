@@ -2,6 +2,7 @@
 
 using EventStore.Client;
 using Newtonsoft.Json;
+using System.Threading;
 using static eventanalyser.Projections.DeleteOptions;
 
 public record StreamState : State
@@ -82,12 +83,11 @@ public class StreamRemovalProjection : Projection<StreamState> {
         String stream = @event.OriginalEvent.EventStreamId;
         StreamState newState = state;
         Boolean deleteStream=false;
+        String eventAsString = Support.ConvertResolvedEventToString(@event);
 
         //Check the Delete options for our conditions
         switch (this.DeleteOptions) {
             case DeleteOrganisation delOrg:
-
-                String eventAsString = Support.ConvertResolvedEventToString(@event);
                 var dyn = new {
                                   organisationId = Guid.Empty
                               };
@@ -108,20 +108,55 @@ public class StreamRemovalProjection : Projection<StreamState> {
 
                 //if stream already exists, it means we have already truncated.
 
+                if (deleteStream)
+                {
+                    void Log(String msg) => Console.WriteLine($"{(this.DeleteOptions.SafeMode ? "***SAFE MODE*** " : String.Empty)}{msg}");
+
+                    if (this.DeleteOptions.SafeMode == false)
+                    {
+                        await this.EventStoreClient.DeleteAsync(stream, EventStore.Client.StreamState.Any);
+                    }
+
+                    Log($"Deleted stream: {stream}");
+
+                    newState.StreamInfo.Add(stream, new StreamInfo(stream));
+                }
+
+                break;
+
+            case DeleteBefore db:
+                String eventDateTime = Support.GetDateFromEvent(eventAsString);
+
+                if (String.IsNullOrEmpty(eventDateTime)) {
+                    return await Task.FromResult(state);
+                }
+
+                DateTime date = DateTime.Parse(eventDateTime);
+
+                if (date == DateTime.MinValue || date >= db.DateTime) {
+                    return await Task.FromResult(state);
+                }
+
+                //TODO: Where are we checking the tb
+                //newState.StreamInfo.Add(stream, new StreamInfo(stream));
+
+                StreamMetadata streamMetaData = new(null, null,@event.Event.Position.CommitPosition);
+
+                if (this.DeleteOptions.SafeMode == false) {
+                    //TODO: TRUNCATE BEFORE
+                    await this.EventStoreClient.SetStreamMetadataAsync(stream,
+                                                                       EventStore.Client.StreamState.Any,
+                                                                       streamMetaData,
+                                                                       null,
+                                                                       null,
+                                                                       null,
+                                                                       CancellationToken.None);
+                }
+
                 break;
         }
 
-        if (deleteStream) {
-            void Log(String msg) => Console.WriteLine($"{(this.DeleteOptions.SafeMode ? "***SAFE MODE*** " : String.Empty)}{msg}");
-
-            if (this.DeleteOptions.SafeMode == false) {
-                 await this.EventStoreClient.DeleteAsync(stream, EventStore.Client.StreamState.Any);
-            }
-
-            Log($"Deleted stream: {stream}");
-
-            newState.StreamInfo.Add(stream, new StreamInfo(stream));
-        }
+        //TODO: Use the DeleteOptions to decide on the delete?
 
         StreamInfo e = state.StreamInfo[stream];
         Int64 newSize = EventTypeSizeProjection.SizeOnDisk(@event.Event.EventType,
