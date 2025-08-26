@@ -265,3 +265,14 @@ paket-files/
 /Eposity.Testing.Integration/Eposity.Testing.Integration.Sales/xunit.runner.feature.cs
 /Vme.Eposity.QueryModelWriter/Vme.Eposity.QueryModelWriter.DataTransferObjects
 /Support/EventStore/EventStoreSupportTool/EventStoreSupportTool
+/startpoint/bin/Debug/net8.0/startpoint.dll
+/startpoint/bin/Debug/net8.0/startpoint.pdb
+/startpoint/obj/Debug/net8.0/apphost.exe
+/startpoint/obj/Debug/net8.0/refint/startpoint.dll
+/startpoint/obj/Debug/net8.0/startpoint.AssemblyInfo.cs
+/startpoint/obj/Debug/net8.0/startpoint.AssemblyInfoInputs.cache
+/startpoint/obj/Debug/net8.0/startpoint.dll
+/startpoint/obj/Debug/net8.0/startpoint.pdb
+/startpoint/obj/Debug/net8.0/startpoint.sourcelink.json
+/startpoint/bin/Debug/net8.0/startpoint.exe
+/startpoint/obj/Debug/net8.0/ref/startpoint.dll
