@@ -35,7 +35,6 @@ C:\git\StevenBlair123\eventanalyser\startpoint\bin\Debug\net8.0\Microsoft.Extens
 C:\git\StevenBlair123\eventanalyser\startpoint\bin\Debug\net8.0\Microsoft.Extensions.Options.dll
 C:\git\StevenBlair123\eventanalyser\startpoint\bin\Debug\net8.0\Microsoft.Extensions.Primitives.dll
 C:\git\StevenBlair123\eventanalyser\startpoint\bin\Debug\net8.0\Newtonsoft.Json.dll
-C:\git\StevenBlair123\eventanalyser\startpoint\bin\Debug\net8.0\System.Diagnostics.DiagnosticSource.dll
 C:\git\StevenBlair123\eventanalyser\startpoint\bin\Debug\net8.0\System.Linq.Async.dll
 C:\git\StevenBlair123\eventanalyser\startpoint\obj\Debug\net8.0\startpoint.csproj.Up2Date
 C:\git\StevenBlair123\eventanalyser\startpoint\obj\Debug\net8.0\startpoint.dll

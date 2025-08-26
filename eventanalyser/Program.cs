@@ -63,15 +63,17 @@
             
             EventStoreClientSettings settings = EventStoreClientSettings.Create(options.EventStoreConnectionString);
             EventStoreClient eventStoreClient = new(settings); //Use this for deleting streams
-            
+
             // Get the start position for the date (if it has been set)
             Position? startPosition = await GetDateStartPosition(eventStoreClient, options.EventDateFilter);
 
             //TODO: Load method which will pickup checkpoint / state
-            EventTypeSizeState state = new();
-            EventTypeSizeProjection projection = new(state, options);
+            //EventTypeSizeState state = new();
+            //EventTypeSizeProjection projection = new(state, options);
+            OrganisationState state = new(options.OrganisationId);
+            OrganisationRemovalProjection projection = new(state,eventStoreClient);
 
-            Console.WriteLine("Starting projection EventTypeSizeProjection");
+            Console.WriteLine($"Starting projection {nameof(projection)}");
 
             //TODO: This will need hooked up in SubscribeToAllAsync
             //FromStream fs = FromStream.After(new((UInt64)projection.Position));
@@ -115,7 +117,7 @@
 
                         if (message is StreamMessage.Event || message is StreamMessage.CaughtUp) {
                             if (state.Count % options.CheckPointCount == 0 || message is StreamMessage.CaughtUp) {
-                                Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} Events process {state.Count} Last Date {state.LastEventDate}");
+                                //Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} Events process {state.Count} Last Date {state.LastEventDate}");
                                 await Program.SaveState(state);
                             }
                         }
@@ -196,12 +198,20 @@
 
             Console.WriteLine($"Setting checkpoint size to {checkpointCount}");
 
+            Guid organisationId = config.GetSection("AppSettings")["OrganisationId"] switch {
+                null => Guid.Empty,
+                _ => Guid.Parse(config.GetSection("AppSettings")["OrganisationId"])
+            };
+
+            Console.WriteLine($"OrganisationId: {organisationId}");
+
             Mode mode = Mode.Catchup;
 
             Options options = new(evenStoreConnectionString, "") {
                                                                      Mode = mode,
-                                                                     CheckPointCount = checkpointCount
-                                                                 };
+                                                                     CheckPointCount = checkpointCount,
+                                                                     OrganisationId = organisationId
+            };
 
             return options;
         }
