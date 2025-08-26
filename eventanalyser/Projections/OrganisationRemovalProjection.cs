@@ -53,6 +53,7 @@ public class OrganisationRemovalProjection : Projection<OrganisationState> {
         var dyn = new {
                           organisationId = Guid.Empty
                       };
+
         var result = JsonConvert.DeserializeAnonymousType(eventAsString, dyn);
 
         if (result == null || result.organisationId == Guid.Empty) {
