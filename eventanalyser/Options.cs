@@ -1,4 +1,6 @@
-﻿namespace eventanalyser;
+﻿using eventanalyser.Projections;
+
+namespace eventanalyser;
 
 public record Options {
     public Options(String eventStoreConnectionString, String streamName) {
@@ -34,5 +36,5 @@ public record Options {
         get; init;
     }
 
-    public Guid OrganisationId { get; init; }
+    public DeleteOptions DeleteOptions { get; init; }
 }

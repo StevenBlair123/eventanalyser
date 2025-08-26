@@ -1,0 +1,137 @@
+﻿namespace eventanalyser.Projections;
+
+using EventStore.Client;
+using Newtonsoft.Json;
+using static eventanalyser.Projections.DeleteOptions;
+
+public record StreamState : State
+{
+    public Dictionary<String, StreamInfo> StreamInfo { get; set; } = new();
+
+    public override String GetStateAsString() {
+        Dictionary<String, StreamInfo> sortedEventInfo = this.StreamInfo.OrderByDescending(e => e.Value.SizeInBytes).ToDictionary(e => e.Key, e => e.Value);
+
+        this.StreamInfo = sortedEventInfo;
+
+        return JsonConvert.SerializeObject(this);
+    }
+}
+
+public class StreamInfo {
+    public String Name { get; set; }
+
+    public UInt64 Count { get; set; }
+
+    public Int64 SizeInBytes { get; set; }
+
+    public StreamInfo(String name) {
+        this.Name = name;
+    }
+}
+
+public abstract record DeleteOptions {
+    public Boolean SafeMode { get; init; }
+
+    public DeleteOptions(Boolean safeMode=true) {
+        this.SafeMode = safeMode;
+    }
+
+    public record DeleteBefore : DeleteOptions {
+        public DateTime DateTime { get; }
+
+        public DeleteBefore(DateTime dateTime) {
+            this.DateTime = dateTime;
+        }
+    }
+
+    public record DeleteOrganisation : DeleteOptions {
+        public Guid OrganisationId { get; }
+
+        public DeleteOrganisation(Guid organisationId) {
+            this.OrganisationId = organisationId;
+        }
+    }
+
+    public record DeleteStream : DeleteOptions {
+        public String StreamName { get; }
+
+        public DeleteStream(String streamName) {
+            this.StreamName = streamName;
+        }
+    }
+}
+
+public class StreamRemovalProjection : Projection<StreamState> {
+    private readonly DeleteOptions DeleteOptions;
+
+    private readonly EventStoreClient EventStoreClient;
+
+    public StreamRemovalProjection(StreamState state,
+                                   DeleteOptions deleteOptions,
+                                   EventStoreClient eventStoreClient) : base(state) {
+        this.DeleteOptions = deleteOptions;
+        this.EventStoreClient = eventStoreClient;
+    }
+
+    protected override async Task<StreamState> HandleEvent(StreamState state,
+                                                           ResolvedEvent @event) {
+        if (Support.EventCanBeProcessed(@event) == false) {
+            return await Task.FromResult(state);
+        }
+
+        String stream = @event.OriginalEvent.EventStreamId;
+        StreamState newState = state;
+        Boolean deleteStream=false;
+
+        //Check the Delete options for our conditions
+        switch (this.DeleteOptions) {
+            case DeleteOrganisation delOrg:
+
+                String eventAsString = Support.ConvertResolvedEventToString(@event);
+                var dyn = new {
+                                  organisationId = Guid.Empty
+                              };
+
+                var result = JsonConvert.DeserializeAnonymousType(eventAsString, dyn);
+
+                if (result == null || result.organisationId == Guid.Empty) {
+                    return await Task.FromResult(state);
+                }
+
+                if (delOrg.OrganisationId != result.organisationId) {
+                    return await Task.FromResult(state);
+                }
+
+                if (!newState.StreamInfo.ContainsKey(stream)) {
+                    deleteStream = true;
+                }
+
+                //if stream already exists, it means we have already truncated.
+
+                break;
+        }
+
+        if (deleteStream) {
+            void Log(String msg) => Console.WriteLine($"{(this.DeleteOptions.SafeMode ? "***SAFE MODE*** " : String.Empty)}{msg}");
+
+            if (this.DeleteOptions.SafeMode == false) {
+                 await this.EventStoreClient.DeleteAsync(stream, EventStore.Client.StreamState.Any);
+            }
+
+            Log($"Deleted stream: {stream}");
+
+            newState.StreamInfo.Add(stream, new StreamInfo(stream));
+        }
+
+        StreamInfo e = state.StreamInfo[stream];
+        Int64 newSize = EventTypeSizeProjection.SizeOnDisk(@event.Event.EventType,
+                                                           @event.OriginalEvent.Data.ToArray(),
+                                                           @event.OriginalEvent.Metadata.ToArray(),
+                                                           @event.OriginalStreamId);
+
+        e.SizeInBytes += newSize;
+        e.Count += 1;
+
+        return await Task.FromResult(newState);
+    }
+}

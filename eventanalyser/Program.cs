@@ -6,6 +6,8 @@
     using EventStore.Client;
     using Microsoft.Extensions.Configuration;
     using Projections;
+    using static eventanalyser.Projections.DeleteOptions;
+    using StreamState = EventStore.Client.StreamState;
 
     public enum Mode {
         Catchup = 0,
@@ -67,8 +69,12 @@
             //TODO: Load method which will pickup checkpoint / state
             //EventTypeSizeState state = new();
             //EventTypeSizeProjection projection = new(state, options);
-            OrganisationState state = new(options.OrganisationId);
-            OrganisationRemovalProjection projection = new(state,eventStoreClient);
+            //OrganisationState state = new(options.OrganisationId);
+            //OrganisationRemovalProjection projection = new(state,eventStoreClient);
+
+            eventanalyser.Projections.StreamState state = new ();
+
+            StreamRemovalProjection projection = new(state, options.DeleteOptions, eventStoreClient);
 
             Console.WriteLine($"Starting projection {nameof(projection)}");
 
@@ -194,21 +200,33 @@
             }
 
             Console.WriteLine($"Setting checkpoint size to {checkpointCount}");
+            DeleteOptions deleteOptions=null;
 
-            Guid organisationId = config.GetSection("AppSettings")["OrganisationId"] switch {
-                null => Guid.Empty,
-                _ => Guid.Parse(config.GetSection("AppSettings")["OrganisationId"])
-            };
+            if (config.GetSection("AppSettings:DeleteOptions") != null) {
+                Boolean safeMode = true;
 
-            Console.WriteLine($"OrganisationId: {organisationId}");
+                if (!Boolean.TryParse(config.GetSection("AppSettings:DeleteOptions")["SafeMode"], out safeMode)) {
+                    safeMode = true;
+                }
+
+                if (config.GetSection("AppSettings:DeleteOptions")["Type"] == "DeleteOrganisation") {
+                    Guid organisationId = Guid.Parse(config.GetSection("AppSettings:DeleteOptions")["OrganisationId"]);
+
+
+                    Console.WriteLine($"OrganisationId: {organisationId}");
+                    deleteOptions = new DeleteOptions.DeleteOrganisation(organisationId) {
+                                                                                             SafeMode = safeMode
+                                                                                         };
+                }
+            }
 
             Mode mode = Mode.Catchup;
 
             Options options = new(evenStoreConnectionString, "") {
                                                                      Mode = mode,
                                                                      CheckPointCount = checkpointCount,
-                                                                     OrganisationId = organisationId
-            };
+                                                                     DeleteOptions = deleteOptions
+                                                                 };
 
             return options;
         }
