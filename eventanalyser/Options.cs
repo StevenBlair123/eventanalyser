@@ -33,4 +33,6 @@ public record Options {
     {
         get; init;
     }
+
+    public Guid OrganisationId { get; init; }
 }
