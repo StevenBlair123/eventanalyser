@@ -67,3 +67,6 @@
 /startpoint/obj/Debug/net8.0/startpoint.genruntimeconfig.cache
 /startpoint/obj/Debug/net8.0/startpoint.pdb
 /startpoint/obj/Debug/net8.0/startpoint.sourcelink.json
+/startpoint/obj/Release/net8.0
+/eventanalyser.tests/bin/Release/net8.0
+/eventanalyser/bin/Release
