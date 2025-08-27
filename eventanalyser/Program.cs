@@ -2,6 +2,7 @@
     using System;
     using System.Globalization;
     using System.IO;
+    using System.Runtime.CompilerServices;
     using System.Threading.Tasks;
     using CommandLine;
     using EventStore.Client;
@@ -103,9 +104,18 @@
                         Console.WriteLine(g.commitPosition);
                         Console.WriteLine(g.preparePosition);
                     }
-                    
-                    await using var subscription = eventStoreClient.SubscribeToAll(fromAll, filterOptions: filterOptions,
-                                                                                   cancellationToken: cancellationToken);
+
+                    var ss = options.DeleteOptions switch {
+                        DeleteOrganisation => eventStoreClient.SubscribeToAll(fromAll, filterOptions:filterOptions, cancellationToken:cancellationToken),
+
+                        DeleteSalesBefore => eventStoreClient.SubscribeToAll(fromAll, filterOptions:filterOptions, cancellationToken:cancellationToken),
+
+                        //DeleteSalesBefore => eventStoreClient.SubscribeToStream("$ce-SalesTransactionAggregate", FromStream.Start,true),
+
+                        _ => throw new InvalidOperationException("Unsupported delete option")
+                    };
+
+                    await using var subscription = ss;
 
                     await foreach (var message in subscription.Messages.WithCancellation(cancellationToken)) {
                         switch (message) {
@@ -220,14 +230,14 @@
                                                                                          };
                 }
 
-                if (config.GetSection("AppSettings:DeleteOptions")["Type"] == "DeleteBefore") {
+                if (config.GetSection("AppSettings:DeleteOptions")["Type"] == "DeleteSalesBefore") {
                     String dateTimeAsString = config.GetSection("AppSettings:DeleteOptions")["BeforeDateTime"];
 
                     DateTime beforeDateTime = DateTime.Parse(dateTimeAsString);
 
 
                     Console.WriteLine($"BeforeDateTime: {beforeDateTime}");
-                    deleteOptions = new DeleteOptions.DeleteBefore(beforeDateTime) {
+                    deleteOptions = new DeleteOptions.DeleteSalesBefore(beforeDateTime) {
                                                                                        SafeMode = safeMode
                                                                                    };
                 }

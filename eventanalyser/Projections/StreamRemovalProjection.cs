@@ -37,10 +37,10 @@ public abstract record DeleteOptions {
         this.SafeMode = safeMode;
     }
 
-    public record DeleteBefore : DeleteOptions {
+    public record DeleteSalesBefore : DeleteOptions {
         public DateTime DateTime { get; }
 
-        public DeleteBefore(DateTime dateTime) {
+        public DeleteSalesBefore(DateTime dateTime) {
             this.DateTime = dateTime;
         }
     }
@@ -102,29 +102,28 @@ public class StreamRemovalProjection : Projection<StreamState> {
                     return await Task.FromResult(state);
                 }
 
-                if (!newState.StreamInfo.ContainsKey(stream)) {
-                    deleteStream = true;
-                }
+                //if (!newState.StreamInfo.ContainsKey(stream)) {
+                //    deleteStream = true;
+                //}
+
 
                 //if stream already exists, it means we have already truncated.
 
-                if (deleteStream)
-                {
-                    void Log(String msg) => Console.WriteLine($"{(this.DeleteOptions.SafeMode ? "***SAFE MODE*** " : String.Empty)}{msg}");
+                //if (deleteStream) {
+                //    void Log(String msg) => Console.WriteLine($"{(this.DeleteOptions.SafeMode ? "***SAFE MODE*** " : String.Empty)}{msg}");
 
-                    if (this.DeleteOptions.SafeMode == false)
-                    {
-                        await this.EventStoreClient.DeleteAsync(stream, EventStore.Client.StreamState.Any);
-                    }
+                //    if (this.DeleteOptions.SafeMode == false) {
+                //        await this.EventStoreClient.DeleteAsync(stream, EventStore.Client.StreamState.Any);
+                //    }
 
-                    Log($"Deleted stream: {stream}");
+                //    Log($"Deleted stream: {stream}");
 
-                    newState.StreamInfo.Add(stream, new StreamInfo(stream));
-                }
+                //    newState.StreamInfo.Add(stream, new StreamInfo(stream));
+                //}
 
                 break;
 
-            case DeleteBefore db:
+            case DeleteSalesBefore db:
                 String eventDateTime = Support.GetDateFromEvent(eventAsString);
 
                 if (String.IsNullOrEmpty(eventDateTime)) {
@@ -139,24 +138,45 @@ public class StreamRemovalProjection : Projection<StreamState> {
 
                 //TODO: Where are we checking the tb
                 //newState.StreamInfo.Add(stream, new StreamInfo(stream));
+                //We cannot blindly delete a stream with an older event.
+                //This has to be linked to specific types (Sales for example)
+                //The risk would be nuking product / org streams because of an old created event
 
-                StreamMetadata streamMetaData = new(null, null,@event.Event.Position.CommitPosition);
+                //StreamMetadata streamMetaData = new(null, null,@event.Event.Position.CommitPosition);
 
-                if (this.DeleteOptions.SafeMode == false) {
-                    //TODO: TRUNCATE BEFORE
-                    await this.EventStoreClient.SetStreamMetadataAsync(stream,
-                                                                       EventStore.Client.StreamState.Any,
-                                                                       streamMetaData,
-                                                                       null,
-                                                                       null,
-                                                                       null,
-                                                                       CancellationToken.None);
-                }
+                //if (this.DeleteOptions.SafeMode == false) {
+                //    await EventStoreClient.DeleteAsync(stream,EventStore.Client.StreamState.Any);
+
+                //    //TODO: TRUNCATE BEFORE
+                //    //await this.EventStoreClient.SetStreamMetadataAsync(stream,
+                //    //                                                   EventStore.Client.StreamState.Any,
+                //    //                                                   streamMetaData,
+                //    //                                                   null,
+                //    //                                                   null,
+                //    //                                                   null,
+                //    //                                                   CancellationToken.None);
+                //}
 
                 break;
         }
 
         //TODO: Use the DeleteOptions to decide on the delete?
+
+        if (!newState.StreamInfo.ContainsKey(stream)) {
+            deleteStream = true;
+        }
+
+        if (deleteStream) {
+            void Log(String msg) => Console.WriteLine($"{(this.DeleteOptions.SafeMode ? "***SAFE MODE*** " : String.Empty)}{msg}");
+
+            if (this.DeleteOptions.SafeMode == false) {
+                await this.EventStoreClient.DeleteAsync(stream, EventStore.Client.StreamState.Any);
+            }
+
+            Log($"Deleted stream: {stream}");
+
+            newState.StreamInfo.Add(stream, new StreamInfo(stream));
+        }
 
         StreamInfo e = state.StreamInfo[stream];
         Int64 newSize = EventTypeSizeProjection.SizeOnDisk(@event.Event.EventType,

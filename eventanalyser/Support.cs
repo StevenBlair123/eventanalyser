@@ -1,7 +1,6 @@
 ﻿namespace eventanalyser;
 
 using System.Text;
-using eventanalyser.Projections;
 using EventStore.Client;
 using Newtonsoft.Json.Linq;
 
@@ -22,6 +21,7 @@ public class Support {
             _ when jObject["deliveryDateTime"] != null => jObject["deliveryDateTime"].ToString(),
             _ when jObject["datetime"] != null => jObject["datetime"].ToString(),
             _ when jObject["orderCreatedDateTime"] != null => jObject["orderCreatedDateTime"].ToString(),
+            _ when jObject["dt"] != null => jObject["dt"].ToString(),
             _ => null
         };
     }
