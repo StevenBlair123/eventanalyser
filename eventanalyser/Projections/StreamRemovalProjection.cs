@@ -124,6 +124,11 @@ public class StreamRemovalProjection : Projection<StreamState> {
                 break;
 
             case DeleteSalesBefore db:
+
+                if (stream.StartsWith("SalesTransaction") == false) {
+                    return await Task.FromResult(state);
+                }
+
                 String eventDateTime = Support.GetDateFromEvent(eventAsString);
 
                 if (String.IsNullOrEmpty(eventDateTime)) {
