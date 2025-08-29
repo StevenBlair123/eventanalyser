@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 
 public record State {
     public Int64 Count { get; init; }
+    public UInt64 LastPosition { get; init; }
 
     public State() {
         
