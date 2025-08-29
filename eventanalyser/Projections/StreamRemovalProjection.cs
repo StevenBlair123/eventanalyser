@@ -2,12 +2,12 @@
 
 using EventStore.Client;
 using Newtonsoft.Json;
-using System.Threading;
-using static eventanalyser.Projections.DeleteOptions;
+using static DeleteOptions;
 
-public record StreamState : State
-{
+public record StreamState : State {
     public Dictionary<String, StreamInfo> StreamInfo { get; set; } = new();
+
+    public List<(String, String)> Errors { get; set; } = new();
 
     public override String GetStateAsString() {
         Dictionary<String, StreamInfo> sortedEventInfo = this.StreamInfo.OrderByDescending(e => e.Value.SizeInBytes).ToDictionary(e => e.Key, e => e.Value);
@@ -32,7 +32,6 @@ public class StreamInfo {
 
 public abstract record DeleteOptions {
     public Boolean SafeMode { get; init; }
-
     public DeleteOptions(Boolean safeMode=true) {
         this.SafeMode = safeMode;
     }
@@ -82,116 +81,110 @@ public class StreamRemovalProjection : Projection<StreamState> {
 
         String stream = @event.OriginalEvent.EventStreamId;
         StreamState newState = state;
-        Boolean deleteStream=false;
+        Boolean deleteStream = false;
         String eventAsString = Support.ConvertResolvedEventToString(@event);
 
-        //Check the Delete options for our conditions
-        switch (this.DeleteOptions) {
-            case DeleteOrganisation delOrg:
-                var dyn = new {
-                                  organisationId = Guid.Empty
-                              };
+        try {
+            //Check the Delete options for our conditions
+            switch(this.DeleteOptions) {
+                case DeleteOrganisation delOrg:
 
-                var result = JsonConvert.DeserializeAnonymousType(eventAsString, dyn);
+                    //TODO: Just search  for the guid?
+                    if (!eventAsString.Contains(delOrg.OrganisationId.ToString())) {
+                        return await Task.FromResult(state);
+                    }
 
-                if (result == null || result.organisationId == Guid.Empty) {
-                    return await Task.FromResult(state);
-                }
+                    //var dyn = new {
+                    //                  organisationId = Guid.Empty
+                    //              };
 
-                if (delOrg.OrganisationId != result.organisationId) {
-                    return await Task.FromResult(state);
-                }
+                    //var result = JsonConvert.DeserializeAnonymousType(eventAsString, dyn);
 
-                //if (!newState.StreamInfo.ContainsKey(stream)) {
-                //    deleteStream = true;
-                //}
+                    //if (result == null || result.organisationId == Guid.Empty) {
+                    //    return await Task.FromResult(state);
+                    //}
 
+                    //if (delOrg.OrganisationId != result.organisationId) {
+                    //    return await Task.FromResult(state);
+                    //}
 
-                //if stream already exists, it means we have already truncated.
+                    break;
 
-                //if (deleteStream) {
-                //    void Log(String msg) => Console.WriteLine($"{(this.DeleteOptions.SafeMode ? "***SAFE MODE*** " : String.Empty)}{msg}");
+                case DeleteSalesBefore db:
 
-                //    if (this.DeleteOptions.SafeMode == false) {
-                //        await this.EventStoreClient.DeleteAsync(stream, EventStore.Client.StreamState.Any);
-                //    }
+                    if (@event.Event.EventType != "SalesTransactionStartedEvent") {
+                        return await Task.FromResult(state);
+                    }
 
-                //    Log($"Deleted stream: {stream}");
+                    String eventDateTime = Support.GetDateFromEvent(eventAsString);
 
-                //    newState.StreamInfo.Add(stream, new StreamInfo(stream));
-                //}
+                    if (String.IsNullOrEmpty(eventDateTime)) {
+                        return await Task.FromResult(state);
+                    }
 
-                break;
+                    DateTime date = DateTime.Parse(eventDateTime);
 
-            case DeleteSalesBefore db:
+                    if (date == DateTime.MinValue || date >= db.DateTime) {
+                        return await Task.FromResult(state);
+                    }
 
-                if (stream.StartsWith("SalesTransaction") == false) {
-                    return await Task.FromResult(state);
-                }
+                    //TODO: Where are we checking the tb
+                    //newState.StreamInfo.Add(stream, new StreamInfo(stream));
+                    //We cannot blindly delete a stream with an older event.
+                    //This has to be linked to specific types (Sales for example)
+                    //The risk would be nuking product / org streams because of an old created event
 
-                String eventDateTime = Support.GetDateFromEvent(eventAsString);
+                    //StreamMetadata streamMetaData = new(null, null,@event.Event.Position.CommitPosition);
 
-                if (String.IsNullOrEmpty(eventDateTime)) {
-                    return await Task.FromResult(state);
-                }
+                    //if (this.DeleteOptions.SafeMode == false) {
+                    //    await EventStoreClient.DeleteAsync(stream,EventStore.Client.StreamState.Any);
 
-                DateTime date = DateTime.Parse(eventDateTime);
+                    //    //TODO: TRUNCATE BEFORE
+                    //    //await this.EventStoreClient.SetStreamMetadataAsync(stream,
+                    //    //                                                   EventStore.Client.StreamState.Any,
+                    //    //                                                   streamMetaData,
+                    //    //                                                   null,
+                    //    //                                                   null,
+                    //    //                                                   null,
+                    //    //                                                   CancellationToken.None);
+                    //}
 
-                if (date == DateTime.MinValue || date >= db.DateTime) {
-                    return await Task.FromResult(state);
-                }
-
-                //TODO: Where are we checking the tb
-                //newState.StreamInfo.Add(stream, new StreamInfo(stream));
-                //We cannot blindly delete a stream with an older event.
-                //This has to be linked to specific types (Sales for example)
-                //The risk would be nuking product / org streams because of an old created event
-
-                //StreamMetadata streamMetaData = new(null, null,@event.Event.Position.CommitPosition);
-
-                //if (this.DeleteOptions.SafeMode == false) {
-                //    await EventStoreClient.DeleteAsync(stream,EventStore.Client.StreamState.Any);
-
-                //    //TODO: TRUNCATE BEFORE
-                //    //await this.EventStoreClient.SetStreamMetadataAsync(stream,
-                //    //                                                   EventStore.Client.StreamState.Any,
-                //    //                                                   streamMetaData,
-                //    //                                                   null,
-                //    //                                                   null,
-                //    //                                                   null,
-                //    //                                                   CancellationToken.None);
-                //}
-
-                break;
-        }
-
-        //TODO: Use the DeleteOptions to decide on the delete?
-
-        if (!newState.StreamInfo.ContainsKey(stream)) {
-            deleteStream = true;
-        }
-
-        if (deleteStream) {
-            void Log(String msg) => Console.WriteLine($"{(this.DeleteOptions.SafeMode ? "***SAFE MODE*** " : String.Empty)}{msg}");
-
-            if (this.DeleteOptions.SafeMode == false) {
-                await this.EventStoreClient.DeleteAsync(stream, EventStore.Client.StreamState.Any);
+                    break;
             }
 
-            Log($"Deleted stream: {stream}");
+            //TODO: Use the DeleteOptions to decide on the delete?
 
-            newState.StreamInfo.Add(stream, new StreamInfo(stream));
+            //if (!newState.StreamInfo.ContainsKey(stream)) {
+            //    deleteStream = true;
+            //}
+
+            //if (deleteStream) {
+                void Log(String msg) => Console.WriteLine($"{(this.DeleteOptions.SafeMode ? "***SAFE MODE*** " : String.Empty)}{msg}");
+
+                if (this.DeleteOptions.SafeMode == false) {
+                    await this.EventStoreClient.DeleteAsync(stream, EventStore.Client.StreamState.Any);
+                }
+
+                Log($"Deleted stream: {stream}");
+
+                //newState.StreamInfo.Add(stream, new StreamInfo(stream));
+            //}
+
+            //StreamInfo e = state.StreamInfo[stream];
+            //Int64 newSize = EventTypeSizeProjection.SizeOnDisk(@event.Event.EventType,
+            //                                                   @event.OriginalEvent.Data.ToArray(),
+            //                                                   @event.OriginalEvent.Metadata.ToArray(),
+            //                                                   @event.OriginalStreamId);
+
+            //e.SizeInBytes += newSize;
+            //e.Count += 1;
+
+            return await Task.FromResult(newState);
+        }
+        catch(Exception ex) {
+            state.Errors.Add(new(eventAsString, ex.Message));
         }
 
-        StreamInfo e = state.StreamInfo[stream];
-        Int64 newSize = EventTypeSizeProjection.SizeOnDisk(@event.Event.EventType,
-                                                           @event.OriginalEvent.Data.ToArray(),
-                                                           @event.OriginalEvent.Metadata.ToArray(),
-                                                           @event.OriginalStreamId);
-
-        e.SizeInBytes += newSize;
-        e.Count += 1;
-
-        return await Task.FromResult(newState);
+        return await Task.FromResult(state);
     }
 }

@@ -2,14 +2,12 @@
     using System;
     using System.Globalization;
     using System.IO;
-    using System.Runtime.CompilerServices;
     using System.Threading.Tasks;
     using CommandLine;
     using EventStore.Client;
     using Microsoft.Extensions.Configuration;
     using Projections;
     using static eventanalyser.Projections.DeleteOptions;
-    using StreamState = EventStore.Client.StreamState;
 
     public enum Mode {
         Catchup = 0,
@@ -89,21 +87,25 @@
             // SubscriptionFilterOptions filterOptions = new(EventTypeFilter.ExcludeSystemEvents());
             SubscriptionFilterOptions filterOptions = new(EventTypeFilter.None);
 
-            CancellationToken cancellationToken = new();
+            CancellationToken cancellationToken = CancellationToken.None;
 
             //TODO: Improve this (signal?)
             while (true) {
                 try {
-                    FromAll fromAll = startPosition switch {
+                    FromAll fromAll = options.StartFromPosition switch {
                         null => FromAll.Start,
-                        _ => FromAll.After(startPosition.Value)
+                        _ when options.StartFromPosition.HasValue => FromAll.After( new Position(options.StartFromPosition.Value, options.StartFromPosition.Value)),
+                        _ => FromAll.After(startPosition.GetValueOrDefault())
                     };
 
                     if (fromAll != FromAll.Start) {
                         var g = fromAll.ToUInt64();
-                        Console.WriteLine(g.commitPosition);
-                        Console.WriteLine(g.preparePosition);
+                        Console.WriteLine($"Commit: {g.commitPosition}");
+                        Console.WriteLine($"Prepare: {g.preparePosition}");
                     }
+
+                    Console.WriteLine($"Press return to start...");
+                    Console.ReadKey();
 
                     var ss = options.DeleteOptions switch {
                         DeleteOrganisation => eventStoreClient.SubscribeToAll(fromAll, filterOptions:filterOptions, cancellationToken:cancellationToken),
@@ -131,6 +133,14 @@
 
                         if (message is StreamMessage.Event || message is StreamMessage.CaughtUp) {
                             if (state.Count % options.CheckPointCount == 0 || message is StreamMessage.CaughtUp) {
+
+                                if (message is StreamMessage.Event sm) {
+
+                                    state = state with {
+                                                           LastPosition = sm.ResolvedEvent.OriginalPosition.Value.CommitPosition
+                                                       };
+                                }
+
                                 //Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} Events process {state.Count} Last Date {state.LastEventDate}");
                                 await Program.SaveState(state);
                             }
@@ -210,6 +220,14 @@
                 checkpointCount = 1000;
             }
 
+            String startPositionAsString = config.GetSection("AppSettings")["StartPosition"];
+
+            UInt64 startPosition;
+            Boolean success = UInt64.TryParse(startPositionAsString, NumberStyles.Any,
+                                              CultureInfo.InvariantCulture, out startPosition);
+
+            UInt64? startPositionNullable = success ? startPosition : (ulong?)null;
+
             Console.WriteLine($"Setting checkpoint size to {checkpointCount}");
             DeleteOptions deleteOptions=null;
 
@@ -248,7 +266,8 @@
             Options options = new(evenStoreConnectionString, "") {
                                                                      Mode = mode,
                                                                      CheckPointCount = checkpointCount,
-                                                                     DeleteOptions = deleteOptions
+                                                                     DeleteOptions = deleteOptions,
+                                                                     StartFromPosition = startPositionNullable
                                                                  };
 
             return options;

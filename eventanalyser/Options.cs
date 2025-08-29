@@ -20,9 +20,7 @@ public record Options {
     public Mode Mode {
         get; init;
     }
-    public int? Position {
-        get; init;
-    }
+
     public Int32 BufferSize {
         get; init;
     }
@@ -37,4 +35,6 @@ public record Options {
     }
 
     public DeleteOptions DeleteOptions { get; init; }
+
+    public UInt64? StartFromPosition { get; set; }
 }
