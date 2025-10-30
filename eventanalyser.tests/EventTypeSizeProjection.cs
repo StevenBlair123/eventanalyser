@@ -12,8 +12,35 @@ namespace eventanalyser.tests {
     public class DeleteOrganisationTests {
         [SetUp]
         public void Setup() {
+            
+        }
 
-            //DockerHelper.StartContainerForEventStore().Wait();
+        //[Test]
+        public async Task Test() {
+            //AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+
+            //Int32 port = DockerHelper.EventStoreHttpPort;
+
+            //var settings = EventStoreClientSettings.Create(
+            //                                               $"esdb://admin:changeit@127.0.0.1:{port}?tls=false&tlsVerifyCert=false"
+            //                                              );
+            //var client = new EventStoreClient(settings);
+            //var client = new EventStoreClient(settings);
+            var client = DockerHelper.EventStoreClient;
+
+            // Quick test: write and read event
+            var evt = new EventData(
+                                    Uuid.NewUuid(),
+                                    "test-event",
+                                    Encoding.UTF8.GetBytes("{\"msg\":\"hello\"}")
+                                   );
+
+            await client.AppendToStreamAsync("test-stream", EventStore.Client.StreamState.Any, new[] { evt });
+            Console.WriteLine("Event appended.");
+
+            var result = client.ReadStreamAsync(Direction.Backwards, "test-stream", StreamPosition.End, 1);
+            await foreach (var re in result)
+                Console.WriteLine(Encoding.UTF8.GetString(re.Event.Data.Span));
         }
 
         [Test]
@@ -48,6 +75,18 @@ namespace eventanalyser.tests {
 
             await DockerHelper.EventStoreClient.AppendToStreamAsync("TestStream", StreamRevision.None, [eventData]);
 
+            //var result = DockerHelper.EventStoreClient.ReadAllAsync(Direction.Backwards, Position.Start);
+
+            //await foreach (var re in result)
+            //{
+            //    var evt = re.Event;
+            //    Console.WriteLine($"Event Type: {evt.EventType}");
+            //    Console.WriteLine($"Event Data: {System.Text.Encoding.UTF8.GetString(evt.Data.Span)}");
+            //}
+
+            //TODO: How do we determine no delete?
+            //The event still being there is one thing, but what if we have not configured this correctly?
+            //Meaning the event would still be there anyway
             StreamState newState = await projection.Handle(resolvedEvent);
         }
     }

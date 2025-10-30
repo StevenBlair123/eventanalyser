@@ -152,12 +152,16 @@ class Program {
                     firstEventOfDay = e; // Track the first event found for that day
                 }
 
+                Console.WriteLine($"currentPosition: {e.OriginalPosition.Value.CommitPosition}");
+
                 // If we pass the target date (i.e., the event is earlier than the target date), stop reading
                 if (eventDate.Date < targetDate.Date) {
                     // Update the current position to continue from the last event's position
                     currentPosition = e.OriginalPosition.GetValueOrDefault();
 
-                    if(firstEventOfDay.HasValue == false) {
+                    
+
+                    if (firstEventOfDay.HasValue == false) {
                         firstEventOfDay = e; // Track the first event found for that day
                     }
 

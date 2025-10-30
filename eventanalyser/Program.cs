@@ -9,6 +9,13 @@
     using Projections;
     using static eventanalyser.Projections.DeleteOptions;
 
+    /*
+     * Support multple projections
+     * Start point should indicate what date it is and the Position?
+     * Should start point be a projection? (Date and last date changed Position)
+     *
+     */
+
     public enum Mode {
         Catchup = 0,
         Persistent = 1
@@ -67,14 +74,14 @@
             Position? startPosition = await GetDateStartPosition(eventStoreClient, options.EventDateFilter);
 
             //TODO: Load method which will pickup checkpoint / state
-            //EventTypeSizeState state = new();
-            //EventTypeSizeProjection projection = new(state, options);
+            EventTypeSizeState state = new();
+            EventTypeSizeProjection projection = new(state, options);
             //OrganisationState state = new(options.OrganisationId);
             //OrganisationRemovalProjection projection = new(state,eventStoreClient);
 
-            eventanalyser.Projections.StreamState state = new ();
+            //eventanalyser.Projections.StreamState state = new ();
 
-            StreamRemovalProjection projection = new(state, options.DeleteOptions, eventStoreClient);
+            //StreamRemovalProjection projection = new(state, options.DeleteOptions, eventStoreClient);
 
             Console.WriteLine($"Starting projection {nameof(projection)}");
 
@@ -107,22 +114,25 @@
                     Console.WriteLine($"Press return to start...");
                     Console.ReadKey();
 
-                    var ss = options.DeleteOptions switch {
-                        DeleteOrganisation => eventStoreClient.SubscribeToAll(fromAll, filterOptions:filterOptions, cancellationToken:cancellationToken),
+                    await using var subscription = eventStoreClient.SubscribeToAll(fromAll, filterOptions: filterOptions,
+                                                                                   cancellationToken: cancellationToken);
 
-                        DeleteSalesBefore => eventStoreClient.SubscribeToAll(fromAll, filterOptions:filterOptions, cancellationToken:cancellationToken),
+                    //var ss = options.DeleteOptions switch {
+                    //    DeleteOrganisation => eventStoreClient.SubscribeToAll(fromAll, filterOptions:filterOptions, cancellationToken:cancellationToken),
 
-                        //DeleteSalesBefore => eventStoreClient.SubscribeToStream("$ce-SalesTransactionAggregate", FromStream.Start,true),
+                    //    DeleteSalesBefore => eventStoreClient.SubscribeToAll(fromAll, filterOptions:filterOptions, cancellationToken:cancellationToken),
 
-                        _ => throw new InvalidOperationException("Unsupported delete option")
-                    };
+                    //    //DeleteSalesBefore => eventStoreClient.SubscribeToStream("$ce-SalesTransactionAggregate", FromStream.Start,true),
 
-                    await using var subscription = ss;
+                    //    _ => throw new InvalidOperationException("Unsupported delete option")
+                    //};
+
+                    //await using var subscription = ss;
 
                     await foreach (var message in subscription.Messages.WithCancellation(cancellationToken)) {
                         switch (message) {
                             case StreamMessage.Event(var @event):
-                                //Console.WriteLine($"In handle {@event.Event.EventType}");
+                                Console.WriteLine($"In handle {@event.Event.EventType}");
                                 state = await projection.Handle(@event);
                                 break;
 
