@@ -6,13 +6,18 @@
     using CommandLine;
     using EventStore.Client;
     using Microsoft.Extensions.Configuration;
+    using Microsoft.Extensions.Options;
     using Projections;
-    using static eventanalyser.Projections.DeleteOptions;
+    using StreamState = Projections.StreamState;
 
     /*
-     * Support multple projections
+     * Support multiple projections
      * Start point should indicate what date it is and the Position?
      * Should start point be a projection? (Date and last date changed Position)
+     * Different appsettings for projections?
+     * Checkpoints
+     * dev settings
+     * Write state after <n> time has elapsed
      *
      */
 
@@ -21,25 +26,39 @@
         Persistent = 1
     }
 
-    public static class WriteLineHelper {
-        public static void WriteWarning(String msg) {
-            ConsoleColor foreground = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(msg);
-            Console.ForegroundColor = foreground;
-        }
-    }
-
-    public class CommandLineArgs
-    {
-        [Option('d', "date", Required = false, HelpText = "Set the date of run (today,yesterday, explicit date (yyyy-MM-dd)")]
-        public String DateOption { get; set; }
-
-        [Option('s', "startposition", Required = false, HelpText = "Set the date of run (today,yesterday, explicit date (yyyy-MM-dd)")]
-        public Int32? StartPosition { get; set; }
-    }
-
     class Program {
+
+        static IProjection InitialProjection(Options options,EventStoreClient eventStoreClient) {
+        
+            //State? state = null;
+
+            //TODO Remaining projections
+            if (false) {
+                EventTypeSizeState state = new();
+                return new EventTypeSizeProjection(state, options);
+            }
+
+            if (true) {
+                StartPositionFromDateState state = new();
+                return new StartPositionFromDateProjection(state, options);
+            }
+
+            if (options.DeleteOptions != null) {
+                StreamState state = new StreamState();
+                return new StreamRemovalProjection(state, options.DeleteOptions, eventStoreClient);
+            }
+
+
+            //State state = new EventTypeSizeState();
+            //EventTypeSizeProjection projection = new((EventTypeSizeState)state, options);
+
+            //IProjection pp = "test2" switch {
+            //    "test1" => new StartPositionFromDateProjection((StartPositionFromDateState)state, options),
+            //    "test2" => new EventTypeSizeProjection((EventTypeSizeState)state, options),
+            //    "test3" => new StreamRemovalProjection((StreamState)state, null, eventStoreClient),
+            //};
+        }
+
         static async Task Main(String[] args) {
             
             IConfigurationBuilder builder = new ConfigurationBuilder()
@@ -48,34 +67,34 @@
 
             IConfiguration config = builder.Build();
             Options options = Program.GetOptions(config);
-
-            Parser.Default.ParseArguments<CommandLineArgs>(args)
-                .WithParsed<CommandLineArgs>(o =>
-                {
-                    Console.WriteLine(o.DateOption);
-                    Console.WriteLine(o.StartPosition);
-
-                    options = options with {
-                        EventDateFilter = o.DateOption switch {
-                            //null => new DateTime(2024,10,9),//DateTime.MinValue,
-                            null => null,
-                            "" => null,
-                            "today" => DateTime.Now.Date,
-                            "yesterday" => DateTime.Now.Date.AddDays(-1),
-                            _ => DateTime.ParseExact(o.DateOption, "yyyy-MM-dd", null)
-                        },
-                    };
-                });
             
             EventStoreClientSettings settings = EventStoreClientSettings.Create(options.EventStoreConnectionString);
             EventStoreClient eventStoreClient = new(settings); //Use this for deleting streams
 
+            //TODO: DU for different projection config?
+            //Options is too clunky and error prone. Hide this away from user.
+
+            //State state = new EventTypeSizeState();
+            //EventTypeSizeProjection projection = new((EventTypeSizeState)state, options);
+
+            //IProjection pp = "test2" switch {
+            //    "test1" => new StartPositionFromDateProjection((StartPositionFromDateState)state, options),
+            //    "test2" => new EventTypeSizeProjection((EventTypeSizeState)state, options),
+            //    "test3" => new StreamRemovalProjection((StreamState)state,null,eventStoreClient),
+            //};
+
+            IProjection projection = InitialProjection(options,eventStoreClient);
+
+            //if (true) {
+            //    var state1 = await projection.Handle(default);
+            //}
+
+
             // Get the start position for the date (if it has been set)
-            Position? startPosition = await GetDateStartPosition(eventStoreClient, options.EventDateFilter);
+            //Position? startPosition = await GetDateStartPosition(eventStoreClient, options.EventDateFilter);
 
             //TODO: Load method which will pickup checkpoint / state
-            EventTypeSizeState state = new();
-            EventTypeSizeProjection projection = new(state, options);
+
             //OrganisationState state = new(options.OrganisationId);
             //OrganisationRemovalProjection projection = new(state,eventStoreClient);
 
@@ -83,7 +102,7 @@
 
             //StreamRemovalProjection projection = new(state, options.DeleteOptions, eventStoreClient);
 
-            Console.WriteLine($"Starting projection {nameof(projection)}");
+            WriteLineHelper.WriteInfo($"Starting projection {projection.GetType().Name}");
 
             //TODO: This will need hooked up in SubscribeToAllAsync
             //FromStream fs = FromStream.After(new((UInt64)projection.Position));
@@ -95,14 +114,15 @@
             SubscriptionFilterOptions filterOptions = new(EventTypeFilter.None);
 
             CancellationToken cancellationToken = CancellationToken.None;
+            State state = null;
 
             //TODO: Improve this (signal?)
             while (true) {
                 try {
                     FromAll fromAll = options.StartFromPosition switch {
-                        null => FromAll.Start,
                         _ when options.StartFromPosition.HasValue => FromAll.After( new Position(options.StartFromPosition.Value, options.StartFromPosition.Value)),
-                        _ => FromAll.After(startPosition.GetValueOrDefault())
+                        _ => FromAll.Start
+                        //_ => FromAll.After(startPosition.GetValueOrDefault())
                     };
 
                     if (fromAll != FromAll.Start) {
@@ -114,8 +134,34 @@
                     Console.WriteLine($"Press return to start...");
                     Console.ReadKey();
 
-                    await using var subscription = eventStoreClient.SubscribeToAll(fromAll, filterOptions: filterOptions,
-                                                                                   cancellationToken: cancellationToken);
+                    IAsyncEnumerable<StreamMessage>? messages = null;
+
+                    if (projection is StartPositionFromDateProjection) {
+                        EventStoreClient.ReadAllStreamResult events = eventStoreClient.ReadAllAsync(
+                                                                                                    Direction.Backwards,
+                                                                                                    Position.End,
+                                                                                                    EventTypeFilter.ExcludeSystemEvents(),
+                                                                                                    4096, // Adjust page size as needed
+                                                                                                    resolveLinkTos: true, // Whether to resolve links to events
+                                                                                                    null, // Optional: credentials if required
+                                                                                                    null,
+                                                                                                    cancellationToken
+                                                                                                   );
+
+                        messages = events.Messages;
+
+
+                    }
+                    else {
+                        await using EventStoreClient.StreamSubscriptionResult subscription = eventStoreClient.SubscribeToAll(fromAll, filterOptions: filterOptions,
+                            cancellationToken: cancellationToken);
+
+                        messages = subscription.Messages;
+                    }
+
+
+                        //await using EventStoreClient.StreamSubscriptionResult subscription = eventStoreClient.SubscribeToAll(fromAll, filterOptions: filterOptions,
+                        //                                                                                    cancellationToken: cancellationToken);
 
                     //var ss = options.DeleteOptions switch {
                     //    DeleteOrganisation => eventStoreClient.SubscribeToAll(fromAll, filterOptions:filterOptions, cancellationToken:cancellationToken),
@@ -129,7 +175,7 @@
 
                     //await using var subscription = ss;
 
-                    await foreach (var message in subscription.Messages.WithCancellation(cancellationToken)) {
+                    await foreach (var message in messages.WithCancellation(cancellationToken)) {
                         switch (message) {
                             case StreamMessage.Event(var @event):
                                 Console.WriteLine($"In handle {@event.Event.EventType}");
@@ -139,15 +185,20 @@
                             case StreamMessage.CaughtUp:
                                 Console.WriteLine("Caught Up");
                                 break;
+
+                            case StreamMessage.LastAllStreamPosition:
+                                Console.WriteLine("FirstStream Position");
+                                break;
                         }
 
                         if (message is StreamMessage.Event || message is StreamMessage.CaughtUp) {
-                            if (state.Count % options.CheckPointCount == 0 || message is StreamMessage.CaughtUp) {
+                            if (state.Count % options.CheckPointCount == 0 || message is StreamMessage.CaughtUp || state.ForceStateSave) {
 
                                 if (message is StreamMessage.Event sm) {
 
                                     state = state with {
-                                                           LastPosition = sm.ResolvedEvent.OriginalPosition.Value.CommitPosition
+                                                           LastPosition = sm.ResolvedEvent.OriginalPosition.Value.CommitPosition,
+                                                           ForceStateSave = false
                                                        };
                                 }
 
@@ -156,7 +207,14 @@
                             }
                         }
 
+
+
                         //TODO: Dump final state to console as well?
+                    }
+
+                    if (state.FinishProjection) {
+                        WriteLineHelper.WriteWarning($"Signalled to finish Projection");
+                        break;
                     }
                 }
                 catch(Exception e) {
@@ -164,6 +222,7 @@
                 }
             }
 
+            WriteLineHelper.WriteInfo($"Projection finished");
             Console.ReadKey();
         }
 
@@ -232,6 +291,11 @@
 
             String startPositionAsString = config.GetSection("AppSettings")["StartPosition"];
 
+            //EventDateFilter
+            var eventDateFilterAsString = config.GetSection("AppSettings")["EventDateFilter"];
+            DateTime eventDateFilter = DateTime.Parse(eventDateFilterAsString);
+            
+
             UInt64 startPosition;
             Boolean success = UInt64.TryParse(startPositionAsString, NumberStyles.Any,
                                               CultureInfo.InvariantCulture, out startPosition);
@@ -280,6 +344,10 @@
                                                                      StartFromPosition = startPositionNullable
                                                                  };
 
+            options = options with {
+                                       EventDateFilter = eventDateFilter
+                                   };
+
             return options;
         }
 
@@ -288,7 +356,7 @@
             String json = state.GetStateAsString();
 
             String exeDirectory = AppContext.BaseDirectory;
-            String filePath = Path.Combine(exeDirectory, "state.txt");
+            String filePath = Path.Combine(exeDirectory, $"{state.GetType().Name}.txt");
 
             await File.WriteAllTextAsync(filePath, json);
         }
