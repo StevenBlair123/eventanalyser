@@ -28,6 +28,10 @@ public class StartPositionFromDateProjection : Projection<StartPositionFromDateS
                            };
     }
 
+    public override String GetFormattedName() {
+        return $"{this.GetType().Name}";
+    }
+
     protected override async Task<StartPositionFromDateState> HandleEvent(StartPositionFromDateState state,
                                                                           ResolvedEvent @event) {
         EventCountRead++;
