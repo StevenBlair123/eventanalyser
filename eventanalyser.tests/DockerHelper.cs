@@ -24,7 +24,7 @@ namespace eventanalyser.tests
         /// The SQL server host port
         /// </summary>
         public static IContainerService EventstoreContainer;
-        private static Int32 EventStoreHttpPort;
+        public static Int32 EventStoreHttpPort;
         private static String EventStoreLocalConnectionString;
 
         public static String EvenstoreContainerName = "test-eventstore-for-projections";
@@ -39,11 +39,17 @@ namespace eventanalyser.tests
                                                             .WithName(DockerHelper.EvenstoreContainerName)
                                                             .ExposePort(2113)
                                                             .ExposePort(1113)
-                                                            .WithEnvironment("EVENTSTORE_RUN_PROJECTIONS=all", "EVENTSTORE_START_STANDARD_PROJECTIONS=true", "EVENTSTORE_Insecure=true", "EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true")
+                                                            .WithEnvironment(
+                                                                             "EVENTSTORE_RUN_PROJECTIONS=all", 
+                                                                             "EVENTSTORE_START_STANDARD_PROJECTIONS=true", 
+                                                                             "EVENTSTORE_Insecure=true", 
+                                                                             "EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true")
                                                             .WaitForPort("2113/tcp", 30000 /*30s*/)
                                                             .Build();
 
             DockerHelper.EventstoreContainer.Start();
+
+            DockerHelper.EventstoreContainer.WaitForHealthy(30000);
 
             Container config = DockerHelper.EventstoreContainer.GetConfiguration(true);
 
@@ -51,8 +57,27 @@ namespace eventanalyser.tests
 
             // Event Store
             DockerHelper.EventStoreHttpPort = DockerHelper.EventstoreContainer.ToHostExposedEndpoint("2113/tcp").Port;
-            DockerHelper.EventStoreLocalConnectionString = $"esdb://admin:changeit@127.0.0.1:{DockerHelper.EventStoreHttpPort}?tls=false&tlsVerifyCert=false";
-            Setup.DefaultAppSettings["AppSettings:EventStoreConnectionString"] = DockerHelper.EventStoreLocalConnectionString;
+
+
+
+            Int32 port = DockerHelper.EventStoreHttpPort;
+
+            var settings = EventStoreClientSettings.Create(
+                                                           $"esdb://admin:changeit@127.0.0.1:{port}?tls=false&tlsVerifyCert=false"
+                                                          );
+            DockerHelper.EventStoreClient = new EventStoreClient(settings);
+
+
+            //var settings = EventStoreClientSettings.Create(
+            //                                               $"esdb://admin:changeit@127.0.0.1:{DockerHelper.EventStoreHttpPort}?tls=false&tlsVerifyCert=false"
+            //                                              );
+            //var client = new EventStoreClient(settings);
+
+
+            //await client.DeleteAsync("Test", StreamState.Any);
+
+            //DockerHelper.EventStoreLocalConnectionString = $"esdb://admin:changeit@127.0.0.1:{DockerHelper.EventStoreHttpPort}?tls=false&tlsVerifyCert=false";
+            //Setup.DefaultAppSettings["AppSettings:EventStoreConnectionString"] = DockerHelper.EventStoreLocalConnectionString;
 
             return Result.Success();
         }

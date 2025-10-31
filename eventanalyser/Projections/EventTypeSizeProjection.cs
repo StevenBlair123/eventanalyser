@@ -1,10 +1,7 @@
-﻿using System.Runtime.Serialization.Formatters.Binary;
-
-namespace eventanalyser.Projections;
+﻿namespace eventanalyser.Projections;
 
 using EventStore.Client;
 using Newtonsoft.Json;
-using String = System.String;
 
 public class EventInfo {
     public String Type { get; set; }
@@ -44,6 +41,8 @@ public record EventTypeSizeState : State {
         return JsonConvert.SerializeObject(this);
     }
 }
+
+
 
 public class EventTypeSizeProjection : Projection<EventTypeSizeState> {
     private readonly Options Options;

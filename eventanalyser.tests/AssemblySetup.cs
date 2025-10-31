@@ -1,8 +1,6 @@
 namespace eventanalyser.tests{
     using System;
     using Ductus.FluentDocker.Builders;
-    using Ductus.FluentDocker.Services.Extensions;
-    using EventStore.Client;
     using NUnit.Framework;
 
     [SetUpFixture]
@@ -16,22 +14,22 @@ namespace eventanalyser.tests{
 
         [OneTimeSetUp]
         public static void Jstro() {
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
-            if (DockerHelper.EventstoreContainer != null)
-            {
-               DockerHelper.EventstoreContainer.ClearUpContainer();
+            if (DockerHelper.EventstoreContainer != null) {
+                DockerHelper.EventstoreContainer.ClearUpContainer();
             }
 
             DockerHelper.StartContainerForEventStore().Wait();
 
-            var eventStoreHttpPort = DockerHelper.EventstoreContainer.ToHostExposedEndpoint("2113/tcp").Port;
-            var eventStoreLocalConnectionString = $"esdb://admin:changeit@127.0.0.1:{eventStoreHttpPort}?tls=false&tlsVerifyCert=false";
+            //var eventStoreHttpPort = DockerHelper.EventstoreContainer.ToHostExposedEndpoint("2113/tcp").Port;
+            //var eventStoreLocalConnectionString = $"esdb://admin:changeit@127.0.0.1:{eventStoreHttpPort}?tls=false&tlsVerifyCert=false";
 
-            var x = Setup.DefaultAppSettings["AppSettings:EventStoreConnectionString"];
+            //var x = Setup.DefaultAppSettings["AppSettings:EventStoreConnectionString"];
 
-            EventStoreClientSettings eventStoreClientSettings = EventStoreClientSettings.Create(eventStoreLocalConnectionString);
+            //EventStoreClientSettings eventStoreClientSettings = EventStoreClientSettings.Create(eventStoreLocalConnectionString);
 
-            DockerHelper.EventStoreClient = new EventStoreClient(eventStoreClientSettings);
+            //DockerHelper.EventStoreClient = new EventStoreClient(eventStoreClientSettings);
         }
 
         [OneTimeTearDown]
