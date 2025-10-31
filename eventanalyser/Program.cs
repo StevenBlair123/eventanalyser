@@ -111,7 +111,10 @@
                         DeleteOrganisation => eventStoreClient.SubscribeToAll(fromAll, filterOptions:filterOptions, cancellationToken:cancellationToken),
 
                         DeleteSalesBefore => eventStoreClient.SubscribeToAll(fromAll, filterOptions:filterOptions, cancellationToken:cancellationToken),
+                        
+                        DeleteStreamBefore => eventStoreClient.SubscribeToAll(fromAll, filterOptions: filterOptions, cancellationToken: cancellationToken),
 
+                        SetStreamMaxEventCount => eventStoreClient.SubscribeToAll(fromAll, filterOptions: filterOptions, cancellationToken: cancellationToken),
                         //DeleteSalesBefore => eventStoreClient.SubscribeToStream("$ce-SalesTransactionAggregate", FromStream.Start,true),
 
                         _ => throw new InvalidOperationException("Unsupported delete option")
@@ -258,6 +261,44 @@
                     deleteOptions = new DeleteOptions.DeleteSalesBefore(beforeDateTime) {
                                                                                        SafeMode = safeMode
                                                                                    };
+                }
+
+                if (config.GetSection("AppSettings:DeleteOptions")["Type"] == "DeleteStreamBefore")
+                {
+                    String dateTimeAsString = config.GetSection("AppSettings:DeleteOptions")["BeforeDateTime"];
+
+                    DateTime beforeDateTime = DateTime.Parse(dateTimeAsString);
+                    
+                    var eventTypes = config.GetSection("AppSettings:DeleteOptions")["EventTypes"];
+                    List<String> eventTypeList = eventTypes.Split(',').ToList();
+
+                    Console.WriteLine($"BeforeDateTime: {beforeDateTime}");
+                    Console.WriteLine($"EventTypes: {eventTypes}");
+
+                    deleteOptions = new DeleteOptions.DeleteStreamBefore(beforeDateTime, eventTypeList)
+                    {
+                        SafeMode = safeMode
+                    };
+                }
+
+                if (config.GetSection("AppSettings:DeleteOptions")["Type"] == "SetStreamMaxEventCount")
+                {
+                    var eventTypes = config.GetSection("AppSettings:DeleteOptions")["EventTypes"];
+                    List<String> eventTypeList = eventTypes.Split(',').ToList();
+
+                    var maxEventCount = config.GetSection("AppSettings:DeleteOptions")["MaxEventCount"];
+                    if (String.IsNullOrEmpty(maxEventCount))
+                        throw new Exception("Invalid max event count, no value has been specified");
+                    Int32 eventCountToKeep = Int32.Parse(maxEventCount);
+                    if (eventCountToKeep<= 0)
+                        throw new Exception("Invalid max event count, must be greater than zero");
+
+                    Console.WriteLine($"EventTypes: {eventTypes}");
+
+                    deleteOptions = new DeleteOptions.SetStreamMaxEventCount(eventCountToKeep, eventTypeList)
+                    {
+                        SafeMode = safeMode
+                    };
                 }
             }
 

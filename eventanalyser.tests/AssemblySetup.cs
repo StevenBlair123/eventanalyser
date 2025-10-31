@@ -19,7 +19,7 @@ namespace eventanalyser.tests{
 
             if (DockerHelper.EventstoreContainer != null)
             {
-                DockerHelper.EventstoreContainer.ClearUpContainer();
+               DockerHelper.EventstoreContainer.ClearUpContainer();
             }
 
             DockerHelper.StartContainerForEventStore().Wait();

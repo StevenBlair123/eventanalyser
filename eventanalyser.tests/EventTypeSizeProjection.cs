@@ -50,6 +50,45 @@ namespace eventanalyser.tests {
 
             StreamState newState = await projection.Handle(resolvedEvent);
         }
+
+        [Test]
+        public async Task stream_meta_data_set_to_max_eventCount()
+        {
+            StreamState streamState = new();
+            Guid organisationId = Guid.NewGuid();
+            SetStreamMaxEventCount deleteOptions = new(2, new List<string>() {
+                "TestEvent"
+            });
+
+            string @event = $@"{{
+  ""organisationId"": ""{organisationId}""
+}}";
+
+            Byte[] byteArray = Encoding.UTF8.GetBytes(@event);
+
+            ReadOnlyMemory<Byte> data = new(byteArray);
+
+            IDictionary<String, String> metadata = new Dictionary<String, String>();
+
+            metadata.Add("type", "TestEvent");
+            metadata.Add("created", "1");
+            metadata.Add("content-type", "application/json");
+
+            StreamRemovalProjection projection = new(streamState, deleteOptions, DockerHelper.EventStoreClient);
+            
+            // Wrtite some events to a stream
+            for (int i = 0; i < 10; i++) {
+                EventRecord eventRecord = new("TestStream1", Uuid.NewUuid(), StreamPosition.FromInt64(1), new Position(0, 0), metadata, data, null);
+
+                EventData eventData = new(Uuid.NewUuid(), "TestEvent", eventRecord.Data);
+                await DockerHelper.EventStoreClient.AppendToStreamAsync("TestStream", EventStore.Client.StreamState.Any, [eventData]);
+            }
+            EventRecord eventRecordX = new("TestStream1", Uuid.NewUuid(), StreamPosition.FromInt64(1), new Position(0, 0), metadata, data, null);
+            //TODO: How do we verify the event was not deleted
+            ResolvedEvent resolvedEvent = new(eventRecordX, null, null);
+            
+            StreamState newState = await projection.Handle(resolvedEvent);
+        }
     }
 
     public class Tests {
