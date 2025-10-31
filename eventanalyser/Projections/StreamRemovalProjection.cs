@@ -44,6 +44,30 @@ public abstract record DeleteOptions {
         }
     }
 
+    public record DeleteStreamBefore : DeleteOptions
+    {
+        public DateTime DateTime { get; }
+        public List<String> EventTypes { get; }
+
+        public DeleteStreamBefore(DateTime dateTime, List<String> eventTypes) {
+            this.DateTime = dateTime;
+            EventTypes = eventTypes;
+        }
+    }
+
+    public record SetStreamMaxEventCount : DeleteOptions
+    {
+        public int EventCountToKeep { get; }
+        public List<String> EventTypes { get; }
+
+        public SetStreamMaxEventCount(Int32 eventCountToKeep, List<String> eventTypes)
+        {
+            EventCountToKeep = eventCountToKeep;
+            EventTypes = eventTypes;
+        }
+    }
+
+
     public record DeleteOrganisation : DeleteOptions {
         public Guid OrganisationId { get; }
 
@@ -82,6 +106,8 @@ public class StreamRemovalProjection : Projection<StreamState> {
         String stream = @event.OriginalEvent.EventStreamId;
         StreamState newState = state;
         Boolean deleteStream = false;
+        String eventDateTime = null;
+        DateTime date = DateTime.MinValue;
         String eventAsString = Support.ConvertResolvedEventToString(@event);
 
         try {
@@ -116,13 +142,13 @@ public class StreamRemovalProjection : Projection<StreamState> {
                         return await Task.FromResult(state);
                     }
 
-                    String eventDateTime = Support.GetDateFromEvent(eventAsString);
+                    eventDateTime = Support.GetDateFromEvent(eventAsString);
 
                     if (String.IsNullOrEmpty(eventDateTime)) {
                         return await Task.FromResult(state);
                     }
 
-                    DateTime date = DateTime.Parse(eventDateTime);
+                    date = DateTime.Parse(eventDateTime);
 
                     if (date == DateTime.MinValue || date >= db.DateTime) {
                         return await Task.FromResult(state);
@@ -150,6 +176,35 @@ public class StreamRemovalProjection : Projection<StreamState> {
                     //}
 
                     break;
+                case DeleteStreamBefore db:
+
+                    if (db.EventTypes.Contains(@event.Event.EventType) == false) {
+                        // We are not interested in this event type
+                        return await Task.FromResult(state);
+                    }
+
+                    eventDateTime = Support.GetDateFromEvent(eventAsString);
+
+                    if (String.IsNullOrEmpty(eventDateTime)) {
+                        return await Task.FromResult(state);
+                    }
+
+                    date = DateTime.Parse(eventDateTime);
+
+                    if (date == DateTime.MinValue || date >= db.DateTime) {
+                        return await Task.FromResult(state);
+                    }
+
+                    break;
+                case SetStreamMaxEventCount db:
+
+                    if (db.EventTypes.Contains(@event.Event.EventType) == false)
+                    {
+                        // We are not interested in this event type
+                        return await Task.FromResult(state);
+                    }
+
+                    break;
             }
 
             //TODO: Use the DeleteOptions to decide on the delete?
@@ -162,10 +217,31 @@ public class StreamRemovalProjection : Projection<StreamState> {
                 void Log(String msg) => Console.WriteLine($"{(this.DeleteOptions.SafeMode ? "***SAFE MODE*** " : String.Empty)}{msg}");
 
                 if (this.DeleteOptions.SafeMode == false) {
-                    await this.EventStoreClient.DeleteAsync(stream, EventStore.Client.StreamState.Any);
+                    Task t = this.DeleteOptions switch {
+                        DeleteStreamBefore => this.EventStoreClient.DeleteAsync(stream,
+                            EventStore.Client.StreamState.Any),
+                        SetStreamMaxEventCount s => this.EventStoreClient.SetStreamMetadataAsync(stream,
+                            EventStore.Client.StreamState.Any,
+                            new StreamMetadata(maxCount: s.EventCountToKeep),
+                            null,
+                            null,
+                            null,
+                            CancellationToken.None),
+                        _ => throw new Exception("Unknown option atm")
+                    };
+
+                    await t;
                 }
 
-                Log($"Deleted stream: {stream}");
+                switch (this.DeleteOptions) {
+                    case DeleteStreamBefore:
+                        Log($"Deleted stream: {stream}");
+                        break;
+                    case SetStreamMaxEventCount s:
+                        Log($"stream: {stream} max events set to {s.EventCountToKeep}");
+                        break;
+                }
+
 
                 //newState.StreamInfo.Add(stream, new StreamInfo(stream));
             //}
