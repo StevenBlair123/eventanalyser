@@ -7,6 +7,10 @@ public record State {
     public Int64 Count { get; init; }
     public UInt64 LastPosition { get; init; }
 
+    //TODO: Not sure this is the best approach. Could an EventHandler work nicer?
+    public Boolean ForceStateSave { get; set; }
+    public Boolean FinishProjection { get; set; }
+
     public State() {
         
     }
@@ -16,7 +20,12 @@ public record State {
     }
 }
 
-public abstract class Projection<TState> where TState : State {
+public interface IProjection
+{
+    Task<State> Handle(ResolvedEvent @event);
+}
+
+public abstract class Projection<TState> : IProjection where TState : State {
     public TState State { get; set; }
 
     public Int64 Position { get; set; }
@@ -25,7 +34,7 @@ public abstract class Projection<TState> where TState : State {
         this.State = state;
     }
 
-    public virtual async Task<TState> Handle(ResolvedEvent @event) {
+    public virtual async Task<State> Handle(ResolvedEvent @event) {
         //Call child class Handle
         this.State = await this.HandleEvent(this.State, @event);
 
