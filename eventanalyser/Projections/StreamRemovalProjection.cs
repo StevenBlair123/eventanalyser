@@ -1,5 +1,6 @@
 ﻿namespace eventanalyser.Projections;
 
+using System.Runtime.CompilerServices;
 using EventStore.Client;
 using Newtonsoft.Json;
 using static DeleteOptions;
@@ -95,6 +96,10 @@ public class StreamRemovalProjection : Projection<StreamState> {
                                    EventStoreClient eventStoreClient) : base(state) {
         this.DeleteOptions = deleteOptions;
         this.EventStoreClient = eventStoreClient;
+    }
+
+    public override String GetFormattedName() {
+        return $"{this.GetType().Name}-{this.DeleteOptions.GetType().Name}";
     }
 
     protected override async Task<StreamState> HandleEvent(StreamState state,

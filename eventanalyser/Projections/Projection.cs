@@ -20,9 +20,10 @@ public record State {
     }
 }
 
-public interface IProjection
-{
+public interface IProjection {
     Task<State> Handle(ResolvedEvent @event);
+
+    String GetFormattedName();
 }
 
 public abstract class Projection<TState> : IProjection where TState : State {
@@ -47,6 +48,12 @@ public abstract class Projection<TState> : IProjection where TState : State {
 
         return this.State;
     }
+
+    public virtual String GetFormattedName() {
+        return $"{this.GetType().Name}";
+    }
+
+
     protected abstract Task<TState> HandleEvent(TState state, ResolvedEvent @event);
 
     protected virtual void UpdateCheckpoint() {

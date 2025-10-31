@@ -10,7 +10,7 @@ namespace eventanalyser.tests {
     using StreamState = Projections.StreamState;
     using String = System.String;
 
-    public class DeleteOrganisationTests {
+    public class ProjectionTests {
         [SetUp]
         public void Setup() {
             
@@ -145,15 +145,6 @@ namespace eventanalyser.tests {
 
             }
 
-    }
-
-    public class Tests {
-        [SetUp]
-        public void Setup() {
-        }
-
-        //TODO: Date ranges etc
-
         [Test]
         public async Task event_size_is_recorded() {
             EventTypeSizeState state = new();
@@ -195,5 +186,8 @@ namespace eventanalyser.tests {
             var sizeInBytes = eventInfo.SizeInBytes;
             sizeInBytes.ShouldBe(96);
         }
+
+        //TODO: Startpoint
+        //TODO: Delete Organisation
     }
 }
