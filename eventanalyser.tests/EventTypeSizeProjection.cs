@@ -81,7 +81,7 @@ namespace eventanalyser.tests {
                 EventRecord eventRecord = new("TestStream1", Uuid.NewUuid(), StreamPosition.FromInt64(1), new Position(0, 0), metadata, data, null);
 
                 EventData eventData = new(Uuid.NewUuid(), "TestEvent", eventRecord.Data);
-                await DockerHelper.EventStoreClient.AppendToStreamAsync("TestStream", EventStore.Client.StreamState.Any, [eventData]);
+                await DockerHelper.EventStoreClient.AppendToStreamAsync("TestStream1", EventStore.Client.StreamState.Any, [eventData]);
             }
             EventRecord eventRecordX = new("TestStream1", Uuid.NewUuid(), StreamPosition.FromInt64(1), new Position(0, 0), metadata, data, null);
             //TODO: How do we verify the event was not deleted
