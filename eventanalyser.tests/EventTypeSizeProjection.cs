@@ -226,6 +226,8 @@ namespace eventanalyser.tests {
                 await projection.Handle(resolvedEvent);
             }
 
+            Int32 deletedStreamCount = 0;
+            Int32 notDeletedStreamCount = 0;
             // Now check the sales have been deleted correctly
             foreach (ResolvedEvent resolvedEvent in resolvedEvents) {
                 var stream = resolvedEvent.OriginalStreamId;
@@ -237,11 +239,16 @@ namespace eventanalyser.tests {
 
                 if (DateTime.Parse(date) < deleteOptions.DateTime.Date) {
                     readstate.ShouldBe(ReadState.StreamNotFound, date);
+                    deletedStreamCount++;
                 }
                 else {
                     readstate.ShouldBe(ReadState.Ok, date);
+                    notDeletedStreamCount++;
                 }
             }
+
+            deletedStreamCount.ShouldBe(29);
+            notDeletedStreamCount.ShouldBe(2);
         }
 
         internal ResolvedEvent CreateResolvedEvent(String streamName,String eventType, Guid organisationId) {
