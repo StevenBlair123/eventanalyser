@@ -55,12 +55,6 @@ public class EventTypeSizeProjection : Projection<EventTypeSizeState> {
     protected override async Task<EventTypeSizeState> HandleEvent(EventTypeSizeState state,
                                                                   ResolvedEvent @event) {
 
-
-        if (@event.Event.EventType == "$>")
-        {
-            int i = 0;
-        }
-
         if (Options.EventDateFilter.HasValue) {
             if (@event.Event.Created.Date != Options.EventDateFilter.GetValueOrDefault().Date) {
                 ulong skipped = state.SkippedEvents;

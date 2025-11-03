@@ -41,4 +41,10 @@
     <ProjectReference Include="..\eventanalyser\eventanalyser.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Config\appsettings.event.analyser.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

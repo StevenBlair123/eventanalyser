@@ -11,4 +11,11 @@ public static class WriteLineHelper {
         Console.WriteLine(msg);
         Console.ForegroundColor = foreground;
     }
+
+    public static void WritePrompt(String msg) {
+        ConsoleColor foreground = Console.ForegroundColor;
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine(msg);
+        Console.ForegroundColor = foreground;
+    }
 }

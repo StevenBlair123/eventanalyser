@@ -42,4 +42,6 @@ public record Options {
 
     public EventTypeSize? EventTypeSize
     { get; set; }
+
+    public Boolean ByPassReadKeyToStart { get; set; }
 }
