@@ -10,6 +10,27 @@ public class EventStoreHelper {
         this.EventStoreClient = eventStoreClient;
     }
 
+    public async Task<(DateTime SaleDateTime,String Stream)> WriteSaleEvent(DateTime dateTime,
+                                               Guid organisationId,
+                                               System.Boolean isOldEvent = false) {
+        Guid salesTransactionId = Guid.NewGuid();
+        String streamName = $"SalesTransactionAggregate-{salesTransactionId:N}";
+        String @event = $@"{{
+    ""organisationId"": ""{organisationId}"",
+    ""stid"": ""{salesTransactionId}"",
+    ""dt"": ""{dateTime:O}""
+}}";
+
+        String eventType = isOldEvent switch {
+            true => "OldSaleStarted",
+            _ => "SaleStarted"
+        };
+
+        await this.WriteEvent(streamName, @event, eventType);
+
+        return (dateTime,streamName);
+    }
+
     public async Task WriteEvent(String stream, String @event, String eventType) {
         Guid eventId = Guid.NewGuid();
 
@@ -29,6 +50,13 @@ public class EventStoreHelper {
 
     public async Task<Int32> GetEventCountFromStream(String stream,CancellationToken cancellationToken) {
         var x = DockerHelper.EventStoreClient.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, 100);
+
+        var t = await x.ReadState;
+
+        if (t == ReadState.StreamNotFound) {
+            return 0;
+        }
+
         var g = await x.ToListAsync(cancellationToken);
             
         return g.Count;

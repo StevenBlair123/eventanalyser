@@ -71,6 +71,10 @@ public class ProjectionService {
                 }
 
                 await foreach (var message in messages.WithCancellation(cancellationToken)) {
+
+
+                    Console.WriteLine(message.GetType().Name);
+
                     switch(message) {
                         case StreamMessage.Event(var @event):
                             if (@event.Event == null)
@@ -88,13 +92,16 @@ public class ProjectionService {
                             Console.WriteLine("FirstStream Position");
                             break;
 
-                        case StreamMessage.AllStreamCheckpointReached:
-                            state = state with {
-                                                   FinishProjection = true
-                                               };
+                        case StreamMessage.AllStreamCheckpointReached goon:
+                            if (goon.Position.PreparePosition == 0) {
+                                state = state with {
+                                    FinishProjection = true
+                                };
+                            }
 
                             Console.WriteLine("AllStreamCheckpointReached");
                             break;
+
                     }
 
                     if (message is StreamMessage.Event || message is StreamMessage.CaughtUp) {
