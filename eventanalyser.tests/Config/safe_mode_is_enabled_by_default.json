@@ -7,7 +7,6 @@
     "StartPosition": 0,
     "DeleteOptions": {
       "Type": "DeleteOrganisation",
-      "SafeMode": true,
       "OrganisationId": "6fd748c5-96f3-4907-85ca-fbe8e20714f0"
     }
   }

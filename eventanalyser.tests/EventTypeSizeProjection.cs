@@ -64,6 +64,12 @@ namespace eventanalyser.tests {
             SetStreamMaxEventCount deleteOptions = new(2, ["testEvent"]);
             String stream = $"TestStream_{Guid.NewGuid():N}";
 
+            this.Options = this.Options with {
+                                                 DeleteOptions = this.Options.DeleteOptions with {
+                                                                                                     SafeMode = false
+                                                                                                 }
+                                             };
+
             eventanalyser.Options options = new(DockerHelper.EventStoreClient.ConnectionName, "") {
                                                                                                       ByPassReadKeyToStart = true
                                                                                                   };
@@ -139,6 +145,12 @@ namespace eventanalyser.tests {
         public async Task stream_delete_only_deletes_streams_older_than_date() {
             StreamState streamState = new();
             Guid organisationId = Guid.NewGuid();
+            this.Options = this.Options with {
+                                                 DeleteOptions = this.Options.DeleteOptions with {
+                                                                                                     SafeMode = false
+                                                                                                 }
+                                             };
+
             StreamRemovalProjection projection = new(streamState, 
                                                      this.Options.DeleteOptions, 
                                                      DockerHelper.EventStoreClient);
@@ -149,8 +161,6 @@ namespace eventanalyser.tests {
 
 
             DeleteStreamBefore dsb = (DeleteStreamBefore)this.Options.DeleteOptions;
-
-
 
             var startDate = new DateTime(2025, 9, 1);
             var endDate = new DateTime(2025, 9, 30);
