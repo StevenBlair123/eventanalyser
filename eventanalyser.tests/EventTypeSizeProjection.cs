@@ -14,11 +14,25 @@ namespace eventanalyser.tests {
     public class ProjectionTests {
         private EventStoreHelper EventStoreHelper;
 
+        private Options Options;
+
         [SetUp]
         public void Setup() {
             this.EventStoreHelper = new EventStoreHelper(DockerHelper.EventStoreClient);
 
+            var testName = TestContext.CurrentContext.Test.Name;
 
+            IConfigurationBuilder builder = new ConfigurationBuilder()
+                                            .SetBasePath(Directory.GetCurrentDirectory())
+                                            .AddJsonFile($"Config\\{testName}.json", optional: false);
+
+            IConfiguration config = builder.Build();
+            this.Options = eventanalyser.Program.GetOptions(config);
+
+            Options = Options with {
+                                       EventStoreConnectionString = DockerHelper.EventStoreClient.ConnectionName,
+                                       ByPassReadKeyToStart = true,
+                                   };
         }
 
         [Test]
@@ -27,19 +41,8 @@ namespace eventanalyser.tests {
             Guid organisationId = Guid.NewGuid();
             String stream = $"TestStream_{Guid.NewGuid():N}";
 
-            eventanalyser.Options options = new(DockerHelper.EventStoreClient.ConnectionName, "") {
-                                                                                                      EventTypeSize = new EventTypeSize(true),
-
-                                                                                                      ByPassReadKeyToStart = true
-                                                                                                  };
-
-            options = options with {
-                                       DeleteOptions = new DeleteOrganisation(Guid.NewGuid()),
-                                       
-                                   };
-
-            StreamRemovalProjection projection = new(streamState, options.DeleteOptions, DockerHelper.EventStoreClient);
-            ProjectionService projectionService = new(projection, DockerHelper.EventStoreClient, options);
+            StreamRemovalProjection projection = new(streamState, Options.DeleteOptions, DockerHelper.EventStoreClient);
+            ProjectionService projectionService = new(projection, DockerHelper.EventStoreClient, Options);
 
             String @event = $@"{{
   ""organisationId"": ""{organisationId}""
@@ -101,24 +104,12 @@ namespace eventanalyser.tests {
         [Test]
         public async Task event_size_is_recorded() {
 
-            IConfigurationBuilder builder = new ConfigurationBuilder()
-                                            .SetBasePath(Directory.GetCurrentDirectory())
-                                            .AddJsonFile("Config\\appsettings.event.analyser.json", optional: false);
-
-            IConfiguration config = builder.Build();
-            Options options = eventanalyser.Program.GetOptions(config);
-
-            options = options with {
-                                       EventStoreConnectionString = DockerHelper.EventStoreClient.ConnectionName,
-                                       ByPassReadKeyToStart = true,
-                                   };
-
             EventTypeSizeState state = new();
-            Projection<EventTypeSizeState> projection = new EventTypeSizeProjection(state, options);
+            Projection<EventTypeSizeState> projection = new EventTypeSizeProjection(state, Options);
 
             ProjectionService projectionService = new(projection, 
                                                       DockerHelper.EventStoreClient, 
-                                                      options);
+                                                      Options);
 
             String @event = @"{
   ""id"": 1
@@ -148,25 +139,16 @@ namespace eventanalyser.tests {
         public async Task stream_delete_only_deletes_streams_older_than_date() {
             StreamState streamState = new();
             Guid organisationId = Guid.NewGuid();
-            // TODO: add second test event
-            DeleteStreamBefore deleteOptions = new(new DateTime(2025,10,30), ["OldSaleStarted", "SaleStarted"]) {
-                                                                                                                    SafeMode = false
-                                                                                                                };
-
-            eventanalyser.Options options = new(DockerHelper.EventStoreClient.ConnectionName, 
-                                                "") {
-                                                                                                      ByPassReadKeyToStart = true,
-                                                                                                      DeleteOptions = deleteOptions
-            };
-
             StreamRemovalProjection projection = new(streamState, 
-                                                     deleteOptions, 
+                                                     this.Options.DeleteOptions, 
                                                      DockerHelper.EventStoreClient);
 
             ProjectionService projectionService = new(projection,
                                                       DockerHelper.EventStoreClient,
-                                                      options);
+                                                      Options);
 
+
+            DeleteStreamBefore dsb = (DeleteStreamBefore)this.Options.DeleteOptions;
 
 
 
@@ -206,7 +188,7 @@ namespace eventanalyser.tests {
                                                                             CancellationToken.None);
 
                 try {
-                    if (stream.saleDateTime < deleteOptions.DateTime.Date)
+                    if (stream.saleDateTime < dsb.DateTime)
                     {
                         count.ShouldBe(0, stream.saleDateTime.ToString());
                         deletedStreamCount++;

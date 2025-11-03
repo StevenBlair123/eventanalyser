@@ -42,7 +42,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Config\appsettings.event.analyser.json">
+    <None Update="Config\safe_mode_is_enabled_by_default.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Config\stream_delete_only_deletes_streams_older_than_date.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Config\event_size_is_recorded.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
