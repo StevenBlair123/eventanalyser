@@ -198,29 +198,39 @@ namespace eventanalyser.tests {
             Guid organisationId = Guid.NewGuid();
             // TODO: add second test event
             DeleteStreamBefore deleteOptions = new(new DateTime(2025,10,30), new List<string>() {
-                "SaleStarted"
+                "OldSaleStarted", "SaleStarted"
             });
             deleteOptions = deleteOptions with {
                 SafeMode = false
             };
             StreamRemovalProjection projection = new(streamState, deleteOptions, DockerHelper.EventStoreClient);
-            
-            // We need to add some sales to the database of different dates
-            var startDate = new DateTime(2025, 10, 1);
-            var endDate = new DateTime(2025, 10, 31);
+
+            var startDate = new DateTime(2025, 9, 1);
+            var endDate = new DateTime(2025, 9, 30);
 
             List<ResolvedEvent> resolvedEvents = new();
 
+            for (var date = startDate; date <= endDate; date = date.AddDays(1))
+            {
+                var r = await WriteSaleEvent(date, organisationId, isOldEvent:true);
+                resolvedEvents.Add(r);
+                Console.WriteLine($"Processing date: {date:yyyy-MM-dd}");
+            }
+
+            // We need to add some sales to the database of different dates
+            startDate = new DateTime(2025, 10, 1);
+            endDate = new DateTime(2025, 10, 31);
+            
             for (var date = startDate; date <= endDate; date = date.AddDays(1)) {
                 var r = await WriteSaleEvent(date, organisationId);
                 resolvedEvents.Add(r);
                 Console.WriteLine($"Processing date: {date:yyyy-MM-dd}");
             }
 
-            var x = DockerHelper.EventStoreClient.ReadStreamAsync(Direction.Backwards, "$et-SaleStarted",
+            var x = DockerHelper.EventStoreClient.ReadStreamAsync(Direction.Backwards, "$ce-SalesTransactionAggregate",
                 StreamPosition.End, 100);
             var g = await x.ToListAsync();
-            g.Count.ShouldBe(31);
+            g.Count.ShouldBe(61);
 
             foreach (ResolvedEvent resolvedEvent in resolvedEvents) {
                 await projection.Handle(resolvedEvent);
@@ -247,7 +257,7 @@ namespace eventanalyser.tests {
                 }
             }
 
-            deletedStreamCount.ShouldBe(29);
+            deletedStreamCount.ShouldBe(59);
             notDeletedStreamCount.ShouldBe(2);
         }
 
@@ -273,7 +283,7 @@ namespace eventanalyser.tests {
             return resolvedEvent;
         }
 
-        internal async Task<ResolvedEvent> WriteSaleEvent(DateTime dateTime, Guid organisationId) {
+        internal async Task<ResolvedEvent> WriteSaleEvent(DateTime dateTime, Guid organisationId, System.Boolean isOldEvent=false) {
             Guid salesTransactionId  = Guid.NewGuid();
             String streamName = $"SalesTransactionAggregate-{salesTransactionId:N}";
             string @event = $@"{{
@@ -282,20 +292,25 @@ namespace eventanalyser.tests {
     ""dt"": ""{dateTime:O}""
 }}";
 
+            String eventType = isOldEvent switch {
+                true => "OldSaleStarted",
+                _ => "SaleStarted"
+            };
+
             Byte[] byteArray = Encoding.UTF8.GetBytes(@event);
 
             ReadOnlyMemory<Byte> data = new(byteArray);
 
             IDictionary<String, String> metadata = new Dictionary<String, String>();
 
-            metadata.Add("type", "SaleStarted");
+            metadata.Add("type", eventType);
             metadata.Add("created", "1");
             metadata.Add("content-type", "application/json");
 
             EventRecord eventRecord = new(streamName, Uuid.NewUuid(), StreamPosition.FromInt64(1),
                 new Position(0, 0), metadata, data, null);
 
-            EventData eventData = new(Uuid.NewUuid(), "SaleStarted", eventRecord.Data);
+            EventData eventData = new(Uuid.NewUuid(), eventType, eventRecord.Data);
             await DockerHelper.EventStoreClient.AppendToStreamAsync(streamName,
                 EventStore.Client.StreamState.Any, [eventData]);
 
