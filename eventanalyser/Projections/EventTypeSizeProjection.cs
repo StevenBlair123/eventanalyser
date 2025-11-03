@@ -55,6 +55,12 @@ public class EventTypeSizeProjection : Projection<EventTypeSizeState> {
     protected override async Task<EventTypeSizeState> HandleEvent(EventTypeSizeState state,
                                                                   ResolvedEvent @event) {
 
+
+        if (@event.Event.EventType == "$>")
+        {
+            int i = 0;
+        }
+
         if (Options.EventDateFilter.HasValue) {
             if (@event.Event.Created.Date != Options.EventDateFilter.GetValueOrDefault().Date) {
                 ulong skipped = state.SkippedEvents;
@@ -69,21 +75,27 @@ public class EventTypeSizeProjection : Projection<EventTypeSizeState> {
         var newState = state with {
             LastEventDate = @event.Event.Created
         };
-        if (!newState.EventInfo.ContainsKey(@event.OriginalEvent.EventType)) {
-            newState.EventInfo.Add(@event.OriginalEvent.EventType, new EventInfo(@event.OriginalEvent.EventType));
+
+        String eventTypeKey = @event.IsResolved switch {
+            true => $"$>{@event.Event.EventType}",
+            _ => @event.OriginalEvent.EventType
+        };
+
+        if (!newState.EventInfo.ContainsKey(eventTypeKey)) {
+            newState.EventInfo.Add(eventTypeKey, new EventInfo(eventTypeKey));
         }
 
         //TODO: We are only counting Data.Length but should we look at including EventId / Event Type (or perhaps the whole ResolvedEvent)
         //Safely perform the update
-        EventInfo e = state.EventInfo[@event.OriginalEvent.EventType];
+        EventInfo e = state.EventInfo[eventTypeKey];
 
-        if (@event.Event.EventType == "StoreAddedEvent") {
-
-        }
         //Previous size calculation was ultimately flawed.
         //The routine below was picked out the ES code base
         //UInt64 newSize = e.SizeInBytes += (UInt64)@event.OriginalEvent.Data.Length;
-        Int64 newSize =SizeOnDisk(@event.Event.EventType, @event.OriginalEvent.Data.ToArray(), @event.OriginalEvent.Metadata.ToArray(), @event.OriginalStreamId);
+        Int64 newSize =SizeOnDisk(eventTypeKey, 
+                                  @event.OriginalEvent.Data.ToArray(), 
+                                  @event.OriginalEvent.Metadata.ToArray(), 
+                                  @event.OriginalStreamId);
 
         e.SizeInBytes += newSize;
         e.Count += 1;
