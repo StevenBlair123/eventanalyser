@@ -6,6 +6,7 @@ namespace eventanalyser.tests {
     using System.Text;
     using System.Threading;
     using EventStore.Client;
+    using Microsoft.Extensions.Configuration;
     using static eventanalyser.Projections.DeleteOptions;
     using StreamState = Projections.StreamState;
     using String = System.String;
@@ -16,6 +17,8 @@ namespace eventanalyser.tests {
         [SetUp]
         public void Setup() {
             this.EventStoreHelper = new EventStoreHelper(DockerHelper.EventStoreClient);
+
+
         }
 
         [Test]
@@ -97,11 +100,19 @@ namespace eventanalyser.tests {
 
         [Test]
         public async Task event_size_is_recorded() {
-            eventanalyser.Options options = new(DockerHelper.EventStoreClient.ConnectionName, "") {
-                                                                                                      EventTypeSize = new EventTypeSize(true),
 
-                                                                                                      ByPassReadKeyToStart = true
-                                                                                                  };
+            IConfigurationBuilder builder = new ConfigurationBuilder()
+                                            .SetBasePath(Directory.GetCurrentDirectory())
+                                            .AddJsonFile("Config\\appsettings.event.analyser.json", optional: false);
+
+            IConfiguration config = builder.Build();
+            Options options = eventanalyser.Program.GetOptions(config);
+
+            options = options with {
+                                       EventStoreConnectionString = DockerHelper.EventStoreClient.ConnectionName,
+                                       ByPassReadKeyToStart = true,
+                                   };
+
             EventTypeSizeState state = new();
             Projection<EventTypeSizeState> projection = new EventTypeSizeProjection(state, options);
 

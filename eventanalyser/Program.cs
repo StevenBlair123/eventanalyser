@@ -27,7 +27,7 @@
         Persistent = 1
     }
 
-    class Program {
+    public class Program {
         static IProjection InitialProjection(Options options,EventStoreClient eventStoreClient) {
 
             if (options.DeleteOptions != null) {
@@ -77,7 +77,7 @@
             Console.ReadKey();
         }
 
-        static Options GetOptions(IConfiguration config) {
+        public static Options GetOptions(IConfiguration config) {
             String evenStoreConnectionString = config.GetSection("ConnectionStrings")["EventStoreConnection"];
 
             Int32.TryParse(config.GetSection("AppSettings")["CheckpointCount"], out Int32 checkpointCount);
@@ -188,9 +188,6 @@
                                            EventDateFilter = eventDateFilter
                                        };
             }
-
-
-
 
 
             //EventTypeSize
