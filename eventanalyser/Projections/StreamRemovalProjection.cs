@@ -124,21 +124,6 @@ public class StreamRemovalProjection : Projection<StreamState> {
                     if (!eventAsString.Contains(delOrg.OrganisationId.ToString())) {
                         return await Task.FromResult(state);
                     }
-
-                    //var dyn = new {
-                    //                  organisationId = Guid.Empty
-                    //              };
-
-                    //var result = JsonConvert.DeserializeAnonymousType(eventAsString, dyn);
-
-                    //if (result == null || result.organisationId == Guid.Empty) {
-                    //    return await Task.FromResult(state);
-                    //}
-
-                    //if (delOrg.OrganisationId != result.organisationId) {
-                    //    return await Task.FromResult(state);
-                    //}
-
                     break;
 
                 case DeleteSalesBefore db:
@@ -246,19 +231,6 @@ public class StreamRemovalProjection : Projection<StreamState> {
                         Log($"stream: {stream} max events set to {s.EventCountToKeep}");
                         break;
                 }
-
-
-                //newState.StreamInfo.Add(stream, new StreamInfo(stream));
-            //}
-
-            //StreamInfo e = state.StreamInfo[stream];
-            //Int64 newSize = EventTypeSizeProjection.SizeOnDisk(@event.Event.EventType,
-            //                                                   @event.OriginalEvent.Data.ToArray(),
-            //                                                   @event.OriginalEvent.Metadata.ToArray(),
-            //                                                   @event.OriginalStreamId);
-
-            //e.SizeInBytes += newSize;
-            //e.Count += 1;
 
             return await Task.FromResult(newState);
         }

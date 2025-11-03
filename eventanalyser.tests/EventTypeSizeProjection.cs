@@ -1,177 +1,121 @@
 using eventanalyser.Projections;
 
 namespace eventanalyser.tests {
-    using EventStore.Client;
     using Shouldly;
     using System;
-    using System.Text;
     using System.Threading;
     using static eventanalyser.Projections.DeleteOptions;
     using StreamState = Projections.StreamState;
     using String = System.String;
 
     public class ProjectionTests {
+        private EventStoreHelper EventStoreHelper;
+
         [SetUp]
         public void Setup() {
-            
-        }
-
-        //[Test]
-        public async Task Test() {
-            //AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-
-            //Int32 port = DockerHelper.EventStoreHttpPort;
-
-            //var settings = EventStoreClientSettings.Create(
-            //                                               $"esdb://admin:changeit@127.0.0.1:{port}?tls=false&tlsVerifyCert=false"
-            //                                              );
-            //var client = new EventStoreClient(settings);
-            //var client = new EventStoreClient(settings);
-            var client = DockerHelper.EventStoreClient;
-
-            // Quick test: write and read event
-            var evt = new EventData(
-                                    Uuid.NewUuid(),
-                                    "test-event",
-                                    Encoding.UTF8.GetBytes("{\"msg\":\"hello\"}")
-                                   );
-
-            await client.AppendToStreamAsync("test-stream", EventStore.Client.StreamState.Any, new[] { evt });
-            Console.WriteLine("Event appended.");
-
-            var result = client.ReadStreamAsync(Direction.Backwards, "test-stream", StreamPosition.End, 1);
-            await foreach (var re in result)
-                Console.WriteLine(Encoding.UTF8.GetString(re.Event.Data.Span));
+            this.EventStoreHelper = new EventStoreHelper(DockerHelper.EventStoreClient);
         }
 
         [Test]
         public async Task safe_mode_is_enabled_by_default() {
             StreamState streamState = new();
             Guid organisationId = Guid.NewGuid();
-            DeleteOrganisation deleteOptions = new(Guid.NewGuid());
+            String stream = $"TestStream_{Guid.NewGuid():N}";
 
-            string @event = $@"{{
+            eventanalyser.Options options = new(DockerHelper.EventStoreClient.ConnectionName, "") {
+                                                                                                      EventTypeSize = new EventTypeSize(true),
+
+                                                                                                      ByPassReadKeyToStart = true
+                                                                                                  };
+
+            options = options with {
+                                       DeleteOptions = new DeleteOrganisation(Guid.NewGuid()),
+                                       
+                                   };
+
+            StreamRemovalProjection projection = new(streamState, options.DeleteOptions, DockerHelper.EventStoreClient);
+            ProjectionService projectionService = new(projection, DockerHelper.EventStoreClient, options);
+
+            String @event = $@"{{
   ""organisationId"": ""{organisationId}""
 }}";
 
-            Byte[] byteArray = Encoding.UTF8.GetBytes(@event);
+            await EventStoreHelper.WriteEvent(stream, @event, "event1");
 
-            ReadOnlyMemory<Byte> data = new(byteArray);
+            await projectionService.Start(CancellationToken.None);
 
-            IDictionary<String, String> metadata = new Dictionary<String, String>();
+            Int32 eventCount = await EventStoreHelper.GetEventCountFromStream(stream,CancellationToken.None);
 
-            metadata.Add("type", "event1");
-            metadata.Add("created", "1");
-            metadata.Add("content-type", "json");
-
-            StreamRemovalProjection projection = new(streamState, deleteOptions, DockerHelper.EventStoreClient);
-            EventRecord eventRecord = new("TestStream1", Uuid.NewUuid(), StreamPosition.FromInt64(1), new Position(0, 0), metadata, data, null);
-
-            EventData eventData =  new(Uuid.NewUuid(), "TestEvent", eventRecord.Data);
-
-            //TODO: How do we verify the event was not deleted
-            ResolvedEvent resolvedEvent = new(eventRecord, null, null);
-
-            //await DockerHelper.EventStoreClient.DeleteAsync("TestStream", EventStore.Client.StreamState.Any);
-
-            await DockerHelper.EventStoreClient.AppendToStreamAsync("TestStream", StreamRevision.None, [eventData]);
-
-            //var result = DockerHelper.EventStoreClient.ReadAllAsync(Direction.Backwards, Position.Start);
-
-            //await foreach (var re in result)
-            //{
-            //    var evt = re.Event;
-            //    Console.WriteLine($"Event Type: {evt.EventType}");
-            //    Console.WriteLine($"Event Data: {System.Text.Encoding.UTF8.GetString(evt.Data.Span)}");
-            //}
-
-            //TODO: How do we determine no delete?
-            //The event still being there is one thing, but what if we have not configured this correctly?
-            //Meaning the event would still be there anyway
-            var newState = await projection.Handle(resolvedEvent);
+            eventCount.ShouldBe(1);
         }
 
         [Test]
         public async Task stream_meta_data_set_to_max_eventCount() {
             StreamState streamState = new();
             Guid organisationId = Guid.NewGuid();
-            SetStreamMaxEventCount deleteOptions = new(2, new List<string>() {
-                "TestEvent"
-            });
+            SetStreamMaxEventCount deleteOptions = new(2, ["testEvent"]);
+            String stream = $"TestStream_{Guid.NewGuid():N}";
+
+            eventanalyser.Options options = new(DockerHelper.EventStoreClient.ConnectionName, "") {
+                                                                                                      ByPassReadKeyToStart = true
+                                                                                                  };
+
+            options = options with {
+                                       DeleteOptions = deleteOptions,
+
+                                   };
             deleteOptions = deleteOptions with {
                 SafeMode = false
             };
 
-            string @event = $@"{{
+            String @event = $@"{{
   ""organisationId"": ""{organisationId}""
 }}";
 
-            Byte[] byteArray = Encoding.UTF8.GetBytes(@event);
-
-            ReadOnlyMemory<Byte> data = new(byteArray);
-
-            IDictionary<String, String> metadata = new Dictionary<String, String>();
-
-            metadata.Add("type", "TestEvent");
-            metadata.Add("created", "1");
-            metadata.Add("content-type", "application/json");
-
-            StreamRemovalProjection projection = new(streamState, deleteOptions, DockerHelper.EventStoreClient);
-
-            // Wrtite some events to a stream
-            for (int i = 0; i < 10; i++) {
-                EventRecord eventRecord = new("TestStream1", Uuid.NewUuid(), StreamPosition.FromInt64(1),
-                    new Position(0, 0), metadata, data, null);
-
-                EventData eventData = new(Uuid.NewUuid(), "TestEvent", eventRecord.Data);
-                await DockerHelper.EventStoreClient.AppendToStreamAsync("TestStream1",
-                    EventStore.Client.StreamState.Any, [eventData]);
+            // Write some events to a stream
+            for (Int32 i = 0; i < 10; i++) {
+                await this.EventStoreHelper.WriteEvent(stream, @event, "testEvent");
             }
 
-            var x = DockerHelper.EventStoreClient.ReadStreamAsync(Direction.Backwards, "TestStream1", StreamPosition.End, 100);
-            var g = await x.ToListAsync();
-            g.Count.ShouldBe(10);
+            IProjection projection = new StreamRemovalProjection(streamState,
+                                                                             deleteOptions,
+                                                                             DockerHelper.EventStoreClient);
+            ProjectionService projectionService = new(projection, 
+                                                      DockerHelper.EventStoreClient, 
+                                                      options);
 
-            EventRecord eventRecordX = new("TestStream1", Uuid.NewUuid(), StreamPosition.FromInt64(1),
-                new Position(0, 0), metadata, data, null);
-            //TODO: How do we verify the event was not deleted
-            ResolvedEvent resolvedEvent = new(eventRecordX, null, null);
+            var count = await EventStoreHelper.GetEventCountFromStream(stream,CancellationToken.None);
+            count.ShouldBe(10);
 
-            State newState = await projection.Handle(resolvedEvent);
+            var finalState = await projectionService.Start(CancellationToken.None);
 
-            x = DockerHelper.EventStoreClient.ReadStreamAsync(Direction.Backwards, "TestStream1", StreamPosition.End, 10);
-            g = await x.ToListAsync();
-            g.Count.ShouldBe(2);
-
-            }
+            count = await EventStoreHelper.GetEventCountFromStream(stream,CancellationToken.None);
+            count.ShouldBe(2);
+        }
 
         [Test]
         public async Task event_size_is_recorded() {
+            eventanalyser.Options options = new(DockerHelper.EventStoreClient.ConnectionName, "") {
+                                                                                                      EventTypeSize = new EventTypeSize(true),
+
+                                                                                                      ByPassReadKeyToStart = true
+                                                                                                  };
             EventTypeSizeState state = new();
-            Options options = new("", "");
             Projection<EventTypeSizeState> projection = new EventTypeSizeProjection(state, options);
+
+            ProjectionService projectionService = new(projection, 
+                                                      DockerHelper.EventStoreClient, 
+                                                      options);
 
             String @event = @"{
   ""id"": 1
 }";
 
-            var byteArray = Encoding.UTF8.GetBytes(@event);
+            await EventStoreHelper.WriteEvent("TestStream1", @event, "event1");
 
-            ReadOnlyMemory<Byte> data = new(byteArray);
+            //TODO: Should be a Result
+            var result = await projectionService.Start(CancellationToken.None);
 
-            IDictionary<String, String> metadata = new Dictionary<String, String>();
-
-            metadata.Add("type", "event1");
-            metadata.Add("created", "1");
-            metadata.Add("content-type", "json");
-
-            EventRecord eventRecord = new("TestStream1", Uuid.NewUuid(), StreamPosition.FromInt64(1), new Position(0, 0), metadata, data, null);
-
-            ResolvedEvent resolvedEvent = new(eventRecord, null, null);
-
-            State result = await projection.Handle(resolvedEvent);
-
-            //EventTypeSizeState
             result.ShouldBeOfType<EventTypeSizeState>();
             EventTypeSizeState finalState = result as EventTypeSizeState;
 
@@ -189,5 +133,6 @@ namespace eventanalyser.tests {
 
         //TODO: Startpoint
         //TODO: Delete Organisation
+        //TODO: StreamRemovalProjection Metadata - various filters
     }
 }

@@ -5,7 +5,9 @@
     using System.Reflection.Metadata.Ecma335;
     using System.Threading.Tasks;
     using EventStore.Client;
+    using Google.Protobuf.Reflection;
     using Microsoft.Extensions.Configuration;
+    using Microsoft.Extensions.Options;
     using Newtonsoft.Json;
     using Projections;
     using StreamState = Projections.StreamState;
@@ -16,6 +18,7 @@
      * Write state after <n> time has elapsed
      * Main should have an entry point for unit testing so we cna test the evenstote conenction code!
      * Start Position code - is that working?
+     * System Events should be configurable
      *
      */
 
@@ -25,7 +28,6 @@
     }
 
     class Program {
-
         static IProjection InitialProjection(Options options,EventStoreClient eventStoreClient) {
 
             if (options.DeleteOptions != null) {
@@ -64,118 +66,12 @@
             //Options is too clunky and error prone. Hide this away from user.
             IProjection projection = InitialProjection(options,eventStoreClient);
 
-            WriteLineHelper.WriteInfo($"Starting projection {projection.GetType().Name}");
-            SubscriptionFilterOptions filterOptions = new(EventTypeFilter.None);
+            ProjectionService projectionService = new(projection, 
+                                                      eventStoreClient, 
+                                                      options);
 
-            CancellationToken cancellationToken = CancellationToken.None;
-            State state = null;
-
-            //TODO: Improve this (signal?)
-            while (true) {
-                try {
-                    FromAll fromAll = options.StartFromPosition switch {
-                        _ when options.StartFromPosition.HasValue => FromAll.After( new Position(options.StartFromPosition.Value, options.StartFromPosition.Value)),
-                        _ => FromAll.Start
-                        //_ => FromAll.After(startPosition.GetValueOrDefault())
-                    };
-
-                    if (fromAll != FromAll.Start) {
-                        var g = fromAll.ToUInt64();
-                        Console.WriteLine($"Commit: {g.commitPosition}");
-                        Console.WriteLine($"Prepare: {g.preparePosition}");
-                    }
-
-                    Console.WriteLine($"Press return to start...");
-                    Console.ReadKey();
-
-                    IAsyncEnumerable<StreamMessage>? messages = null;
-
-                    if (projection is StartPositionFromDateProjection) {
-                        EventStoreClient.ReadAllStreamResult events = eventStoreClient.ReadAllAsync(
-                                                                                                    Direction.Backwards,
-                                                                                                    Position.End,
-                                                                                                    EventTypeFilter.ExcludeSystemEvents(),
-                                                                                                    4096, // Adjust page size as needed
-                                                                                                    resolveLinkTos: true, // Whether to resolve links to events
-                                                                                                    null, // Optional: credentials if required
-                                                                                                    null,
-                                                                                                    cancellationToken
-                                                                                                   );
-
-                        messages = events.Messages;
-
-
-                    }
-                    else {
-                        EventStoreClient.StreamSubscriptionResult subscription = eventStoreClient.SubscribeToAll(fromAll, resolveLinkTos: true,filterOptions: filterOptions,
-                            cancellationToken: cancellationToken);
-
-                        messages = subscription.Messages;
-                    }
-                    //await using EventStoreClient.StreamSubscriptionResult subscription = eventStoreClient.SubscribeToAll(fromAll, filterOptions: filterOptions,
-                    //                                                                                    cancellationToken: cancellationToken);
-
-                    //var ss = options.DeleteOptions switch {
-                    //    DeleteOrganisation => eventStoreClient.SubscribeToAll(fromAll, filterOptions:filterOptions, cancellationToken:cancellationToken),
-
-                    //    DeleteSalesBefore => eventStoreClient.SubscribeToAll(fromAll, filterOptions:filterOptions, cancellationToken:cancellationToken),
-
-                    //    //DeleteSalesBefore => eventStoreClient.SubscribeToStream("$ce-SalesTransactionAggregate", FromStream.Start,true),
-
-                    //    _ => throw new InvalidOperationException("Unsupported delete option")
-                    //};
-
-                    //await using var subscription = ss;
-
-                    await foreach (var message in messages.WithCancellation(cancellationToken)) {
-                        switch (message) {
-                            case StreamMessage.Event(var @event):
-                                if (@event.Event == null) 
-                                    continue;
-
-                                Console.WriteLine($"In handle {@event.Event.EventType}");
-                                state = await projection.Handle(@event);
-                                break;
-
-                            case StreamMessage.CaughtUp:
-                                Console.WriteLine("Caught Up");
-                                break;
-
-                            case StreamMessage.LastAllStreamPosition:
-                                Console.WriteLine("FirstStream Position");
-                                break;
-                        }
-
-                        if (message is StreamMessage.Event || message is StreamMessage.CaughtUp) {
-                            if (state.Count % options.CheckPointCount == 0 || message is StreamMessage.CaughtUp || state.ForceStateSave) {
-
-                                if (message is StreamMessage.Event sm) {
-
-                                    state = state with {
-                                                           LastPosition = sm.ResolvedEvent.OriginalPosition.Value.CommitPosition,
-                                                           ForceStateSave = false
-                                                       };
-                                }
-
-                                //Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} Events process {state.Count} Last Date {state.LastEventDate}");
-                                await Program.SaveState(state,projection);
-                            }
-                        }
-
-
-
-                        //TODO: Dump final state to console as well?
-                    }
-
-                    if (state.FinishProjection) {
-                        WriteLineHelper.WriteWarning($"Signalled to finish Projection");
-                        break;
-                    }
-                }
-                catch(Exception e) {
-                    Console.WriteLine(e);
-                }
-            }
+            //TODO: Result?
+            await projectionService.Start(CancellationToken.None);
 
             WriteLineHelper.WriteInfo($"Projection finished");
             Console.ReadKey();
@@ -310,22 +206,6 @@
 
 
             return options;
-        }
-
-        private static async Task SaveState<TState>(TState state,IProjection projection) where TState : State {
-            //TODO: Log state to screen / file?
-            String json = state.GetStateAsString();
-
-            String exeDirectory = AppContext.BaseDirectory;
-            String filePath = Path.Combine(exeDirectory, $"{projection.GetFormattedName()}.txt");
-
-            await File.WriteAllTextAsync(filePath, json);
-        }
-
-        private static void SubscriptionDropped(StreamSubscription arg1,
-                                                SubscriptionDroppedReason arg2,
-                                                Exception? arg3) {
-            WriteLineHelper.WriteWarning($"{arg2.ToString()}");
         }
     }
 }
