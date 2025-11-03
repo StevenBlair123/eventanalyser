@@ -2,6 +2,8 @@
 
 namespace eventanalyser;
 
+public record EventTypeSize(Boolean Enabled);
+
 public record Options {
     public Options(String eventStoreConnectionString, String streamName) {
         this.EventStoreConnectionString = eventStoreConnectionString;
@@ -38,5 +40,6 @@ public record Options {
 
     public UInt64? StartFromPosition { get; set; }
 
-
+    public EventTypeSize? EventTypeSize
+    { get; set; }
 }

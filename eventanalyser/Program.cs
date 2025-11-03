@@ -2,9 +2,11 @@
     using System;
     using System.Globalization;
     using System.IO;
+    using System.Reflection.Metadata.Ecma335;
     using System.Threading.Tasks;
     using EventStore.Client;
     using Microsoft.Extensions.Configuration;
+    using Newtonsoft.Json;
     using Projections;
     using StreamState = Projections.StreamState;
 
@@ -37,7 +39,7 @@
             }
 
             //TODO Remaining projections
-            if (false) {
+            if (options.EventTypeSize != null) {
                 EventTypeSizeState state = new();
                 return new EventTypeSizeProjection(state, options);
             }
@@ -105,7 +107,7 @@
 
                     }
                     else {
-                        EventStoreClient.StreamSubscriptionResult subscription = eventStoreClient.SubscribeToAll(fromAll, filterOptions: filterOptions,
+                        EventStoreClient.StreamSubscriptionResult subscription = eventStoreClient.SubscribeToAll(fromAll, resolveLinkTos: true,filterOptions: filterOptions,
                             cancellationToken: cancellationToken);
 
                         messages = subscription.Messages;
@@ -128,6 +130,9 @@
                     await foreach (var message in messages.WithCancellation(cancellationToken)) {
                         switch (message) {
                             case StreamMessage.Event(var @event):
+                                if (@event.Event == null) 
+                                    continue;
+
                                 Console.WriteLine($"In handle {@event.Event.EventType}");
                                 state = await projection.Handle(@event);
                                 break;
@@ -188,9 +193,7 @@
 
             String startPositionAsString = config.GetSection("AppSettings")["StartPosition"];
 
-            //EventDateFilter
-            var eventDateFilterAsString = config.GetSection("AppSettings")["EventDateFilter"];
-            DateTime.TryParse(eventDateFilterAsString,out DateTime eventDateFilter);
+
 
             UInt64 startPosition;
             Boolean success = UInt64.TryParse(startPositionAsString, NumberStyles.Any,
@@ -278,9 +281,33 @@
                                                                      StartFromPosition = startPositionNullable
                                                                  };
 
-            options = options with {
-                                       EventDateFilter = eventDateFilter
-                                   };
+            //EventDateFilter
+            if (config.GetSection("AppSettings")["EventDateFilter"] != null) {
+
+
+                var eventDateFilterAsString = config.GetSection("AppSettings")["EventDateFilter"];
+                DateTime.TryParse(eventDateFilterAsString, out DateTime eventDateFilter);
+
+                options = options with {
+                                           EventDateFilter = eventDateFilter
+                                       };
+            }
+
+
+
+
+
+            //EventTypeSize
+            if ( config.GetSection("AppSettings:EventTypeSize").Value != null);
+            {
+                //TODO: Check if enabled
+                options = options with {
+                                           EventTypeSize = new EventTypeSize(true)
+                                       };
+
+            }
+
+
 
             return options;
         }
