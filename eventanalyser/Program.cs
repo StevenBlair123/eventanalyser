@@ -13,12 +13,10 @@
      * Write state after <n> time has elapsed
      * Start Position code - is that working?
      * System Events should be configurable
-     * control this by config
-     * //if (goon.Position.PreparePosition == 0) {
-       //    state = state with {
-       //        FinishProjection = true
-       //    };
-       //}
+
+    Only do this once in ctor:
+     Task t = this.DeleteOptions switch {
+
      * lookm at event type filtering on FromAll 
        e.g. var filter = new SubscriptionFilterOptions(
            EventTypeFilter.Prefix("Sale", "SalesTransaction")
