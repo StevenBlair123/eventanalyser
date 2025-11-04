@@ -31,7 +31,7 @@ namespace eventanalyser.tests {
 
             Options = Options with {
                                        EventStoreConnectionString = DockerHelper.EventStoreClient.ConnectionName,
-                                       ByPassReadKeyToStart = true,
+                                       IsTestMode = true,
                                    };
         }
 
@@ -71,7 +71,7 @@ namespace eventanalyser.tests {
                                              };
 
             eventanalyser.Options options = new(DockerHelper.EventStoreClient.ConnectionName, "") {
-                                                                                                      ByPassReadKeyToStart = true
+                                                                                                      IsTestMode = true
                                                                                                   };
 
             options = options with {
