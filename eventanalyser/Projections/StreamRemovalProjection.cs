@@ -1,9 +1,8 @@
 ﻿namespace eventanalyser.Projections;
 
-using System.Runtime.CompilerServices;
-using EventStore.Client;
 using Newtonsoft.Json;
 using static DeleteOptions;
+using KurrentDB.Client;
 
 public record StreamState : State {
     public Dictionary<String, StreamInfo> StreamInfo { get; set; } = new();
@@ -94,11 +93,11 @@ public abstract record DeleteOptions {
 public class StreamRemovalProjection : Projection<DeleteState> {
     private readonly DeleteOptions DeleteOptions;
 
-    private readonly EventStoreClient EventStoreClient;
+    private readonly KurrentDBClient EventStoreClient;
 
     public StreamRemovalProjection(DeleteState state,
                                    DeleteOptions deleteOptions,
-                                   EventStoreClient eventStoreClient) : base(state) {
+                                   KurrentDBClient eventStoreClient) : base(state) {
         this.DeleteOptions = deleteOptions;
         this.EventStoreClient = eventStoreClient;
     }

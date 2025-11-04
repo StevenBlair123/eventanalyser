@@ -1,7 +1,7 @@
 ﻿namespace eventanalyser;
 
 using System.Text;
-using EventStore.Client;
+using KurrentDB.Client;
 using Newtonsoft.Json.Linq;
 
 public class Support {

@@ -2,15 +2,10 @@
     using System;
     using System.Globalization;
     using System.IO;
-    using System.Reflection.Metadata.Ecma335;
     using System.Threading.Tasks;
-    using EventStore.Client;
-    using Google.Protobuf.Reflection;
     using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.Options;
-    using Newtonsoft.Json;
     using Projections;
-    using StreamState = Projections.StreamState;
+    using KurrentDB.Client;
 
     /*
      * Start point should indicate what date it is and the Position?
@@ -38,7 +33,7 @@
     }
 
     public class Program {
-        static IProjection InitialProjection(Options options,EventStoreClient eventStoreClient) {
+        static IProjection InitialProjection(Options options, KurrentDB.Client.KurrentDBClient eventStoreClient) {
 
             if (options.DeleteOptions != null) {
                 DeleteState state = new();

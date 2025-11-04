@@ -1,6 +1,7 @@
 ﻿namespace eventanalyser;
 
 using EventStore.Client;
+using KurrentDB.Client;
 using Projections;
 
 public class ProjectionService {
@@ -47,7 +48,7 @@ public class ProjectionService {
                 IAsyncEnumerable<StreamMessage>? messages = null;
 
                 if (this.Projection is StartPositionFromDateProjection) {
-                    EventStoreClient.ReadAllStreamResult events = this.EventStoreClient.ReadAllAsync(Direction.Backwards,
+                    KurrentDBClient.ReadAllStreamResult events = this.EventStoreClient.ReadAllAsync(Direction.Backwards,
                                                                                                      Position.End,
                                                                                                      EventTypeFilter.ExcludeSystemEvents(),
                                                                                                      4096, // Adjust page size as needed
@@ -61,7 +62,7 @@ public class ProjectionService {
 
                 }
                 else {
-                    EventStoreClient.StreamSubscriptionResult subscription =
+                    KurrentDBClient.StreamSubscriptionResult subscription =
                         this.EventStoreClient.SubscribeToAll(fromAll, 
                                                              resolveLinkTos:true, 
                                                              filterOptions:filterOptions,

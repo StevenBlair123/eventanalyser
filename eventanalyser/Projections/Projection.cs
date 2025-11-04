@@ -1,6 +1,7 @@
 ﻿namespace eventanalyser.Projections;
 
 using EventStore.Client;
+using KurrentDB.Client;
 using Newtonsoft.Json;
 
 public record State {

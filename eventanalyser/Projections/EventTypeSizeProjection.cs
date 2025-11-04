@@ -1,6 +1,5 @@
 ﻿namespace eventanalyser.Projections;
 
-using EventStore.Client;
 using Newtonsoft.Json;
 
 public class EventInfo {
