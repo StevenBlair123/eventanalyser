@@ -40,7 +40,7 @@ public class ProjectionService {
                     WriteLineHelper.WriteWarning($"Prepare: {g.preparePosition}");
                 }
 
-                if (this.Options.ByPassReadKeyToStart == false) {
+                if (this.Options.IsTestMode == false) {
                     WriteLineHelper.WritePrompt($"Press return to start...");
                     Console.ReadKey();
                 }
@@ -77,26 +77,28 @@ public class ProjectionService {
                             if (@event.Event == null)
                                 continue;
 
-                            Console.WriteLine($"In handle {@event.Event.EventType}");
+                            WriteLineHelper.WriteInfo($"In handle {@event.Event.EventType}");
                             state = await this.Projection.Handle(@event);
                             break;
 
                         case StreamMessage.CaughtUp:
-                            Console.WriteLine("Caught Up");
+                            WriteLineHelper.WriteWarning("Caught Up");
                             break;
 
                         case StreamMessage.LastAllStreamPosition:
-                            Console.WriteLine("FirstStream Position");
+                            WriteLineHelper.WriteWarning("FirstStream Position");
                             break;
 
                         case StreamMessage.AllStreamCheckpointReached goon:
-                            //if (goon.Position.PreparePosition == 0) {
-                            //    state = state with {
-                            //        FinishProjection = true
-                            //    };
-                            //}
+                            if (this.Options.IsTestMode) {
+                                if (goon.Position.PreparePosition == 0) {
+                                    state = state with {
+                                                           FinishProjection = true
+                                                       };
+                                }
+                            }
 
-                            Console.WriteLine("AllStreamCheckpointReached");
+                            WriteLineHelper.WriteWarning("AllStreamCheckpointReached");
                             break;
 
                     }
