@@ -1,5 +1,6 @@
 ﻿namespace eventanalyser.Projections;
 
+using KurrentDB.Client;
 using Newtonsoft.Json;
 
 public class EventInfo {

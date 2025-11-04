@@ -1,12 +1,12 @@
 namespace eventanalyser.tests;
 
 using System.Text;
-using EventStore.Client;
+using KurrentDB.Client;
 
 public class EventStoreHelper {
-    private readonly EventStoreClient EventStoreClient;
+    private readonly KurrentDBClient EventStoreClient;
 
-    public EventStoreHelper(EventStoreClient eventStoreClient) {
+    public EventStoreHelper(KurrentDBClient eventStoreClient) {
         this.EventStoreClient = eventStoreClient;
     }
 
@@ -44,7 +44,7 @@ public class EventStoreHelper {
         EventData eventData = new(Uuid.FromGuid(eventId), eventType, (ReadOnlyMemory<Byte>)bytes);
 
         await this.EventStoreClient.AppendToStreamAsync(stream,
-                                                        EventStore.Client.StreamState.Any,
+                                                        KurrentDB.Client.StreamState.Any,
                                                         new List<EventData>() { eventData });
     }
 

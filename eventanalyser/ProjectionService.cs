@@ -1,17 +1,16 @@
 ﻿namespace eventanalyser;
 
-using EventStore.Client;
 using KurrentDB.Client;
 using Projections;
 
 public class ProjectionService {
     private readonly IProjection Projection;
-    private readonly EventStoreClient EventStoreClient;
+    private readonly KurrentDBClient EventStoreClient;
 
     private readonly Options Options;
 
-    public ProjectionService(IProjection projection, 
-                             EventStoreClient eventStoreClient,
+    public ProjectionService(IProjection projection,
+                             KurrentDBClient eventStoreClient,
                              Options options) {
         this.Projection = projection;
         this.EventStoreClient = eventStoreClient;

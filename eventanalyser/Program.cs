@@ -63,9 +63,9 @@
 
             IConfiguration config = builder.Build();
             Options options = Program.GetOptions(config);
-            
-            EventStoreClientSettings settings = EventStoreClientSettings.Create(options.EventStoreConnectionString);
-            EventStoreClient eventStoreClient = new(settings); //Use this for deleting streams
+
+            KurrentDBClientSettings settings = KurrentDBClientSettings.Create(options.EventStoreConnectionString);
+            KurrentDBClient eventStoreClient = new(settings); //Use this for deleting streams
 
             //TODO: DU for different projection config?
             //Options is too clunky and error prone. Hide this away from user.

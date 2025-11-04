@@ -213,9 +213,9 @@ public class StreamRemovalProjection : Projection<DeleteState> {
                 if (this.DeleteOptions.SafeMode == false) {
                     Task t = this.DeleteOptions switch {
                         DeleteStreamBefore => this.EventStoreClient.DeleteAsync(stream,
-                            EventStore.Client.StreamState.Any),
+                            KurrentDB.Client.StreamState.Any),
                         SetStreamMaxEventCount s => this.EventStoreClient.SetStreamMetadataAsync(stream,
-                            EventStore.Client.StreamState.Any,
+                                                                                                 KurrentDB.Client.StreamState.Any,
                             new StreamMetadata(maxCount: s.EventCountToKeep),
                             null,
                             null,

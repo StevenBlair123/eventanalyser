@@ -10,6 +10,7 @@ namespace eventanalyser.tests
     using Ductus.FluentDocker.Services;
     using Ductus.FluentDocker.Services.Extensions;
     using EventStore.Client;
+    using KurrentDB.Client;
     using Shouldly;
     using SimpleResults;
 
@@ -29,7 +30,7 @@ namespace eventanalyser.tests
 
         public static String EvenstoreContainerName = "test-eventstore-for-projections";
 
-        public static EventStoreClient EventStoreClient { get; set; }
+        public static KurrentDBClient EventStoreClient { get; set; }
 
         public static async Task<SimpleResults.Result> StartContainerForEventStore()
         {
@@ -62,10 +63,10 @@ namespace eventanalyser.tests
 
             Int32 port = DockerHelper.EventStoreHttpPort;
 
-            var settings = EventStoreClientSettings.Create(
+            var settings = KurrentDBClientSettings.Create(
                                                            $"esdb://admin:changeit@127.0.0.1:{port}?tls=false&tlsVerifyCert=false"
                                                           );
-            DockerHelper.EventStoreClient = new EventStoreClient(settings);
+            DockerHelper.EventStoreClient = new KurrentDBClient(settings);
 
 
             //var settings = EventStoreClientSettings.Create(
