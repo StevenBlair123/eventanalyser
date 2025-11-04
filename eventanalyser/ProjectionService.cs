@@ -20,7 +20,7 @@ public class ProjectionService {
     public async Task<State> Start(CancellationToken cancellationToken) {
         //TODO: Will we need config?
         WriteLineHelper.WriteInfo($"Starting projection {this.Projection.GetType().Name}");
-        State state = null;
+        State state = this.Projection.GetState();
         SubscriptionFilterOptions filterOptions = new(EventTypeFilter.ExcludeSystemEvents());
 
         //TODO: Improve this (signal?)
@@ -64,17 +64,13 @@ public class ProjectionService {
                     EventStoreClient.StreamSubscriptionResult subscription =
                         this.EventStoreClient.SubscribeToAll(fromAll, 
                                                              resolveLinkTos:true, 
-                                                             filterOptions:filterOptions, 
+                                                             filterOptions:filterOptions,
                                                              cancellationToken:cancellationToken);
 
                     messages = subscription.Messages;
                 }
 
                 await foreach (var message in messages.WithCancellation(cancellationToken)) {
-
-
-                    Console.WriteLine(message.GetType().Name);
-
                     switch(message) {
                         case StreamMessage.Event(var @event):
                             if (@event.Event == null)
@@ -93,11 +89,11 @@ public class ProjectionService {
                             break;
 
                         case StreamMessage.AllStreamCheckpointReached goon:
-                            if (goon.Position.PreparePosition == 0) {
-                                state = state with {
-                                    FinishProjection = true
-                                };
-                            }
+                            //if (goon.Position.PreparePosition == 0) {
+                            //    state = state with {
+                            //        FinishProjection = true
+                            //    };
+                            //}
 
                             Console.WriteLine("AllStreamCheckpointReached");
                             break;

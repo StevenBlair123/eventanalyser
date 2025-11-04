@@ -19,6 +19,11 @@ public record StreamState : State {
     }
 }
 
+public record DeleteState : State {
+    public Int64 DeletedCount { get; set; }
+    public List<(String, String)> Errors { get; set; } = new();
+}
+
 public class StreamInfo {
     public String Name { get; set; }
 
@@ -86,12 +91,12 @@ public abstract record DeleteOptions {
     }
 }
 
-public class StreamRemovalProjection : Projection<StreamState> {
+public class StreamRemovalProjection : Projection<DeleteState> {
     private readonly DeleteOptions DeleteOptions;
 
     private readonly EventStoreClient EventStoreClient;
 
-    public StreamRemovalProjection(StreamState state,
+    public StreamRemovalProjection(DeleteState state,
                                    DeleteOptions deleteOptions,
                                    EventStoreClient eventStoreClient) : base(state) {
         this.DeleteOptions = deleteOptions;
@@ -102,14 +107,14 @@ public class StreamRemovalProjection : Projection<StreamState> {
         return $"{this.GetType().Name}-{this.DeleteOptions.GetType().Name}";
     }
 
-    protected override async Task<StreamState> HandleEvent(StreamState state,
+    protected override async Task<DeleteState> HandleEvent(DeleteState state,
                                                            ResolvedEvent @event) {
         if (Support.EventCanBeProcessed(@event) == false) {
             return await Task.FromResult(state);
         }
 
         String stream = @event.OriginalEvent.EventStreamId;
-        StreamState newState = state;
+        DeleteState newState = state;
         Boolean deleteStream = false;
         String eventDateTime = null;
         DateTime date = DateTime.MinValue;
@@ -204,7 +209,7 @@ public class StreamRemovalProjection : Projection<StreamState> {
             //}
 
             //if (deleteStream) {
-                void Log(String msg) => Console.WriteLine($"{(this.DeleteOptions.SafeMode ? "***SAFE MODE*** " : String.Empty)}{msg}");
+                void Log(String msg) => WriteLineHelper.WriteWarning($"{(this.DeleteOptions.SafeMode ? "***SAFE MODE*** " : String.Empty)}{msg}");
 
                 if (this.DeleteOptions.SafeMode == false) {
                     Task t = this.DeleteOptions switch {
@@ -231,6 +236,9 @@ public class StreamRemovalProjection : Projection<StreamState> {
                         Log($"stream: {stream} max events set to {s.EventCountToKeep}");
                         break;
                 }
+                newState = newState with {
+                    DeletedCount = newState.DeletedCount + 1
+                };
 
             return await Task.FromResult(newState);
         }

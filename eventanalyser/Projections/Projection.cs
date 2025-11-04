@@ -24,6 +24,7 @@ public interface IProjection {
     Task<State> Handle(ResolvedEvent @event);
 
     String GetFormattedName();
+    State GetState();
 }
 
 public abstract class Projection<TState> : IProjection where TState : State {
@@ -51,6 +52,10 @@ public abstract class Projection<TState> : IProjection where TState : State {
 
     public virtual String GetFormattedName() {
         return $"{this.GetType().Name}";
+    }
+
+    public virtual State GetState() {
+        return this.State;
     }
 
 

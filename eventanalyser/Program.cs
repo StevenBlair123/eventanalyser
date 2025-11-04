@@ -16,10 +16,20 @@
      * Start point should indicate what date it is and the Position?
      * Checkpoints
      * Write state after <n> time has elapsed
-     * Main should have an entry point for unit testing so we cna test the evenstote conenction code!
      * Start Position code - is that working?
      * System Events should be configurable
-     *
+     * control this by config
+     * //if (goon.Position.PreparePosition == 0) {
+       //    state = state with {
+       //        FinishProjection = true
+       //    };
+       //}
+     * lookm at event type filtering on FromAll 
+       e.g. var filter = new SubscriptionFilterOptions(
+           EventTypeFilter.Prefix("Sale", "SalesTransaction")
+            or 
+           EventTypeFilter.Regex("^Sales?")
+       );
      */
 
     public enum Mode {
@@ -31,7 +41,7 @@
         static IProjection InitialProjection(Options options,EventStoreClient eventStoreClient) {
 
             if (options.DeleteOptions != null) {
-                StreamState state = new();
+                DeleteState state = new();
                 return new StreamRemovalProjection(state, options.DeleteOptions, eventStoreClient);
             }
 

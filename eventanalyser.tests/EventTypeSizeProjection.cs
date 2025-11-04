@@ -37,7 +37,7 @@ namespace eventanalyser.tests {
 
         [Test]
         public async Task safe_mode_is_enabled_by_default() {
-            StreamState streamState = new();
+            DeleteState streamState = new();
             Guid organisationId = Guid.NewGuid();
             String stream = $"TestStream_{Guid.NewGuid():N}";
 
@@ -59,7 +59,7 @@ namespace eventanalyser.tests {
 
         [Test]
         public async Task stream_meta_data_set_to_max_eventCount() {
-            StreamState streamState = new();
+            DeleteState streamState = new();
             Guid organisationId = Guid.NewGuid();
             SetStreamMaxEventCount deleteOptions = new(2, ["StoreProductStockUpdatedEvent", "StockUpdated"]);
             String stream = $"StoreProductStockTransferAggregate-{Guid.NewGuid():N}";
@@ -147,7 +147,7 @@ namespace eventanalyser.tests {
 
         [Test]
         public async Task stream_delete_only_deletes_streams_older_than_date() {
-            StreamState streamState = new();
+            DeleteState streamState = new();
             Guid organisationId = Guid.NewGuid();
             this.Options = this.Options with {
                                                  DeleteOptions = this.Options.DeleteOptions with {
