@@ -22,7 +22,7 @@ public class EventStoreHelper {
 }}";
 
         String eventType = isOldEvent switch {
-            true => "OldSaleStarted",
+            true => "SalesTransactionStartedEvent",
             _ => "SaleStarted"
         };
 

@@ -45,6 +45,9 @@
     <None Update="Config\safe_mode_is_enabled_by_default.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Config\stream_meta_data_set_to_max_eventCount.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Config\stream_delete_only_deletes_streams_older_than_date.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
