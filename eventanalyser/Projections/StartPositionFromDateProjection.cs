@@ -1,6 +1,6 @@
 ﻿namespace eventanalyser.Projections;
 
-using EventStore.Client;
+using KurrentDB.Client;
 
 public record StartPositionFromDateState : State {
     //TODO: Current date and Position

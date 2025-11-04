@@ -2,15 +2,10 @@
     using System;
     using System.Globalization;
     using System.IO;
-    using System.Reflection.Metadata.Ecma335;
     using System.Threading.Tasks;
-    using EventStore.Client;
-    using Google.Protobuf.Reflection;
     using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.Options;
-    using Newtonsoft.Json;
     using Projections;
-    using StreamState = Projections.StreamState;
+    using KurrentDB.Client;
 
     /*
      * Start point should indicate what date it is and the Position?
@@ -18,12 +13,10 @@
      * Write state after <n> time has elapsed
      * Start Position code - is that working?
      * System Events should be configurable
-     * control this by config
-     * //if (goon.Position.PreparePosition == 0) {
-       //    state = state with {
-       //        FinishProjection = true
-       //    };
-       //}
+
+    Only do this once in ctor:
+     Task t = this.DeleteOptions switch {
+
      * lookm at event type filtering on FromAll 
        e.g. var filter = new SubscriptionFilterOptions(
            EventTypeFilter.Prefix("Sale", "SalesTransaction")
@@ -38,7 +31,7 @@
     }
 
     public class Program {
-        static IProjection InitialProjection(Options options,EventStoreClient eventStoreClient) {
+        static IProjection InitialProjection(Options options, KurrentDB.Client.KurrentDBClient eventStoreClient) {
 
             if (options.DeleteOptions != null) {
                 DeleteState state = new();
@@ -68,9 +61,9 @@
 
             IConfiguration config = builder.Build();
             Options options = Program.GetOptions(config);
-            
-            EventStoreClientSettings settings = EventStoreClientSettings.Create(options.EventStoreConnectionString);
-            EventStoreClient eventStoreClient = new(settings); //Use this for deleting streams
+
+            KurrentDBClientSettings settings = KurrentDBClientSettings.Create(options.EventStoreConnectionString);
+            KurrentDBClient eventStoreClient = new(settings); //Use this for deleting streams
 
             //TODO: DU for different projection config?
             //Options is too clunky and error prone. Hide this away from user.
