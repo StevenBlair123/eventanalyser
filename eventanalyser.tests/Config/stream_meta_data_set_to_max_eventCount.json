@@ -6,9 +6,10 @@
     "CheckpointCount": 1000,
     "ByPassReadKeyToStart": true,
     "DeleteOptions": {
-      "Type": "DeleteStreamBefore",
-      "EventTypes": "SaleStarted,SalesTransactionStartedEvent",
-      "BeforeDateTime": "2025-10-30" // Start of 2025 for Southern Core
+      "Type": "SetStreamMaxEventCount",
+      "SafeMode": true,
+      "EventTypes": "StockUpdated,StoreProductStockUpdatedEvent",
+      "MaxEventCount": 2
     }
   }
 }

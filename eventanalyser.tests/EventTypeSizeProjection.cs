@@ -57,12 +57,12 @@ namespace eventanalyser.tests {
             eventCount.ShouldBe(1);
         }
 
-        //[Test]
+        [Test]
         public async Task stream_meta_data_set_to_max_eventCount() {
             StreamState streamState = new();
             Guid organisationId = Guid.NewGuid();
-            SetStreamMaxEventCount deleteOptions = new(2, ["testEvent"]);
-            String stream = $"TestStream_{Guid.NewGuid():N}";
+            SetStreamMaxEventCount deleteOptions = new(2, ["StoreProductStockUpdatedEvent", "StockUpdated"]);
+            String stream = $"StoreProductStockTransferAggregate-{Guid.NewGuid():N}";
 
             this.Options = this.Options with {
                                                  DeleteOptions = this.Options.DeleteOptions with {
@@ -88,7 +88,11 @@ namespace eventanalyser.tests {
 
             // Write some events to a stream
             for (Int32 i = 0; i < 10; i++) {
-                await this.EventStoreHelper.WriteEvent(stream, @event, "testEvent");
+                await this.EventStoreHelper.WriteEvent(stream, @event, "StoreProductStockUpdatedEvent");
+            }
+            for (Int32 i = 0; i < 10; i++)
+            {
+                await this.EventStoreHelper.WriteEvent(stream, @event, "StockUpdated");
             }
 
             IProjection projection = new StreamRemovalProjection(streamState,
@@ -99,7 +103,7 @@ namespace eventanalyser.tests {
                                                       options);
 
             var count = await EventStoreHelper.GetEventCountFromStream(stream,CancellationToken.None);
-            count.ShouldBe(10);
+            count.ShouldBe(20);
 
             var finalState = await projectionService.Start(CancellationToken.None);
 
