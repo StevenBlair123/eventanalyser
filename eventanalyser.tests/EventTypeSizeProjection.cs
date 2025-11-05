@@ -130,7 +130,7 @@ namespace eventanalyser.tests {
             var result = await projectionService.Start(CancellationToken.None);
 
             result.ShouldBeOfType<EventTypeSizeState>();
-            EventTypeSizeState finalState = result as EventTypeSizeState;
+            EventTypeSizeState finalState = result.Data as EventTypeSizeState;
 
             finalState.EventInfo.Count.ShouldBe(1);
 
