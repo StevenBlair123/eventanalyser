@@ -8,10 +8,8 @@
     using KurrentDB.Client;
 
     /*
-     * Start point should indicate what date it is and the Position?
      * Checkpoints
      * Write state after <n> time has elapsed
-     * Start Position code - is that working?
      * System Events should be configurable
 
     Only do this once in ctor:
@@ -31,23 +29,27 @@
     }
 
     public class Program {
-        static IProjection InitialProjection(Options options, KurrentDB.Client.KurrentDBClient eventStoreClient) {
+        static IProjection InitialiseProjection(Options options, 
+                                             KurrentDB.Client.KurrentDBClient eventStoreClient,
+                                             CancellationToken cancellationToken) {
 
             if (options.DeleteOptions != null) {
                 DeleteState state = new();
-                return new StreamRemovalProjection(state, options.DeleteOptions, eventStoreClient);
+                return new StreamRemovalProjection(options, 
+                                                   eventStoreClient);
             }
 
             if (options.EventDateFilter.HasValue) {
-                StartPositionFromDateState state = new();
-                return new StartPositionFromDateProjection(state, options);
+                return new StartPositionFromDateProjection(options);
             }
 
             //TODO Remaining projections
             if (options.EventTypeSize != null) {
-                EventTypeSizeState state = new();
-                return new EventTypeSizeProjection(state, options);
+                return new EventTypeSizeProjection(options);
             }
+
+            //TODO: Should we always load the state from file if present, or allow both (configuration)?
+            //State state = await this.Projection.GetInitialState(true);
 
             return null;
         }
@@ -67,7 +69,7 @@
 
             //TODO: DU for different projection config?
             //Options is too clunky and error prone. Hide this away from user.
-            IProjection projection = InitialProjection(options,eventStoreClient);
+            IProjection projection = InitialiseProjection(options,eventStoreClient,CancellationToken.None);
 
             ProjectionService projectionService = new(projection, 
                                                       eventStoreClient, 
@@ -203,7 +205,17 @@
 
             }
 
+            if (config.GetSection("AppSettings:ReloadState").Value != null)
+                ;
+            {
+                var reloadStateAsString = config.GetSection("AppSettings")["ReloadState"];
+                Boolean.TryParse(reloadStateAsString, out Boolean reloadState);
 
+                //TODO: Check if enabled
+                options = options with {
+                                           ReloadState = reloadState
+                                       };
+            }
 
             return options;
         }

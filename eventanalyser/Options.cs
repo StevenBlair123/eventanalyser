@@ -44,4 +44,5 @@ public record Options {
     { get; set; }
 
     public Boolean IsTestMode { get; set; }
+    public Boolean ReloadState { get; set; }
 }

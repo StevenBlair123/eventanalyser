@@ -8,11 +8,11 @@
   </PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="CommandLineParser" Version="2.9.1" />
 		<PackageReference Include="KurrentDB.Client" Version="1.1.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="SimpleResults" Version="4.0.0" />
 	</ItemGroup>
 
   <ItemGroup>

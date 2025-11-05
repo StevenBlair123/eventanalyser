@@ -41,7 +41,7 @@ namespace eventanalyser.tests {
             Guid organisationId = Guid.NewGuid();
             String stream = $"TestStream_{Guid.NewGuid():N}";
 
-            StreamRemovalProjection projection = new(streamState, Options.DeleteOptions, DockerHelper.EventStoreClient);
+            StreamRemovalProjection projection = new( Options, DockerHelper.EventStoreClient);
             ProjectionService projectionService = new(projection, DockerHelper.EventStoreClient, Options);
 
             String @event = $@"{{
@@ -95,9 +95,8 @@ namespace eventanalyser.tests {
                 await this.EventStoreHelper.WriteEvent(stream, @event, "StockUpdated");
             }
 
-            IProjection projection = new StreamRemovalProjection(streamState,
-                                                                             deleteOptions,
-                                                                             DockerHelper.EventStoreClient);
+            IProjection projection = new StreamRemovalProjection(Options,
+                                                                 DockerHelper.EventStoreClient);
             ProjectionService projectionService = new(projection, 
                                                       DockerHelper.EventStoreClient, 
                                                       options);
@@ -115,7 +114,7 @@ namespace eventanalyser.tests {
         public async Task event_size_is_recorded() {
 
             EventTypeSizeState state = new();
-            Projection<EventTypeSizeState> projection = new EventTypeSizeProjection(state, Options);
+            Projection<EventTypeSizeState> projection = new EventTypeSizeProjection(Options);
 
             ProjectionService projectionService = new(projection, 
                                                       DockerHelper.EventStoreClient, 
@@ -155,8 +154,7 @@ namespace eventanalyser.tests {
                                                                                                  }
                                              };
 
-            StreamRemovalProjection projection = new(streamState, 
-                                                     this.Options.DeleteOptions, 
+            StreamRemovalProjection projection = new(this.Options, 
                                                      DockerHelper.EventStoreClient);
 
             ProjectionService projectionService = new(projection,

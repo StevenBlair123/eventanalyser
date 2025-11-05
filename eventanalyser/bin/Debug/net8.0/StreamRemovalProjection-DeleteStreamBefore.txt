@@ -1,0 +1,1 @@
+{"DeletedCount":0,"Errors":[],"Count":24,"LastPosition":{"CommitPosition":268500614,"PreparePosition":268500614},"ForceStateSave":false,"FinishProjection":false}

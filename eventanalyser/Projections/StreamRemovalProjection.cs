@@ -92,18 +92,16 @@ public abstract record DeleteOptions {
 
 public class StreamRemovalProjection : Projection<DeleteState> {
     private readonly DeleteOptions DeleteOptions;
-
     private readonly KurrentDBClient EventStoreClient;
 
-    public StreamRemovalProjection(DeleteState state,
-                                   DeleteOptions deleteOptions,
-                                   KurrentDBClient eventStoreClient) : base(state) {
-        this.DeleteOptions = deleteOptions;
+    public StreamRemovalProjection(Options options,
+                                   KurrentDBClient eventStoreClient) : base(options) {
+        this.DeleteOptions = options.DeleteOptions;
         this.EventStoreClient = eventStoreClient;
     }
 
     public override String GetFormattedName() {
-        return $"{this.GetType().Name}-{this.DeleteOptions.GetType().Name}";
+        return $"{this.GetType().Name}-{this.Options.DeleteOptions.GetType().Name}";
     }
 
     protected override async Task<DeleteState> HandleEvent(DeleteState state,

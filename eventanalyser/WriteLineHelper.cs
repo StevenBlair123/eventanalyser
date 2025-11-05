@@ -7,6 +7,13 @@ public static class WriteLineHelper {
 
     public static void WriteWarning(String msg) {
         ConsoleColor foreground = Console.ForegroundColor;
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine(msg);
+        Console.ForegroundColor = foreground;
+    }
+
+    public static void WriteError(String msg) {
+        ConsoleColor foreground = Console.ForegroundColor;
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine(msg);
         Console.ForegroundColor = foreground;

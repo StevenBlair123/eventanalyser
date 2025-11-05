@@ -8,22 +8,14 @@
     ".NETCoreApp,Version=v8.0": {
       "eventanalyser/1.0.0": {
         "dependencies": {
-          "CommandLineParser": "2.9.1",
           "KurrentDB.Client": "1.1.0",
           "Microsoft.Extensions.Configuration.Binder": "7.0.0",
           "Microsoft.Extensions.Configuration.Json": "7.0.0",
-          "Newtonsoft.Json": "13.0.3"
+          "Newtonsoft.Json": "13.0.3",
+          "SimpleResults": "4.0.0"
         },
         "runtime": {
           "eventanalyser.dll": {}
-        }
-      },
-      "CommandLineParser/2.9.1": {
-        "runtime": {
-          "lib/netstandard2.0/CommandLine.dll": {
-            "assemblyVersion": "2.9.1.0",
-            "fileVersion": "2.9.1.0"
-          }
         }
       },
       "Google.Api.CommonProtos/2.16.0": {
@@ -169,7 +161,7 @@
           "Microsoft.Extensions.Configuration.Abstractions": "7.0.0",
           "Microsoft.Extensions.Configuration.FileExtensions": "7.0.0",
           "Microsoft.Extensions.FileProviders.Abstractions": "7.0.0",
-          "System.Text.Json": "7.0.0"
+          "System.Text.Json": "8.0.5"
         },
         "runtime": {
           "lib/net7.0/Microsoft.Extensions.Configuration.Json.dll": {
@@ -293,6 +285,22 @@
           }
         }
       },
+      "SimpleResults/4.0.0": {
+        "dependencies": {
+          "System.Text.Json": "8.0.5"
+        },
+        "runtime": {
+          "lib/netstandard2.0/SimpleResults.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "4.0.0.0"
+          }
+        },
+        "resources": {
+          "lib/netstandard2.0/es/SimpleResults.resources.dll": {
+            "locale": "es"
+          }
+        }
+      },
       "System.Diagnostics.DiagnosticSource/9.0.0": {
         "runtime": {
           "lib/net8.0/System.Diagnostics.DiagnosticSource.dll": {
@@ -312,12 +320,7 @@
           }
         }
       },
-      "System.Text.Encodings.Web/7.0.0": {},
-      "System.Text.Json/7.0.0": {
-        "dependencies": {
-          "System.Text.Encodings.Web": "7.0.0"
-        }
-      }
+      "System.Text.Json/8.0.5": {}
     }
   },
   "libraries": {
@@ -325,13 +328,6 @@
       "type": "project",
       "serviceable": false,
       "sha512": ""
-    },
-    "CommandLineParser/2.9.1": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-OE0sl1/sQ37bjVsPKKtwQlWDgqaxWgtme3xZz7JssWUzg5JpMIyHgCTY9MVMxOg48fJ1AgGT3tgdH5m/kQ5xhA==",
-      "path": "commandlineparser/2.9.1",
-      "hashPath": "commandlineparser.2.9.1.nupkg.sha512"
     },
     "Google.Api.CommonProtos/2.16.0": {
       "type": "package",
@@ -501,6 +497,13 @@
       "path": "opentelemetry.api/1.12.0",
       "hashPath": "opentelemetry.api.1.12.0.nupkg.sha512"
     },
+    "SimpleResults/4.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-sr79bTfrkyreryZMXLCnUQtcTAmJKxoSnwR4Gly6izQVPq83wmyn3mexP6HBt1krkdxlcrtN++uU0iWtF0hI0A==",
+      "path": "simpleresults/4.0.0",
+      "hashPath": "simpleresults.4.0.0.nupkg.sha512"
+    },
     "System.Diagnostics.DiagnosticSource/9.0.0": {
       "type": "package",
       "serviceable": true,
@@ -515,19 +518,12 @@
       "path": "system.linq.async/6.0.1",
       "hashPath": "system.linq.async.6.0.1.nupkg.sha512"
     },
-    "System.Text.Encodings.Web/7.0.0": {
+    "System.Text.Json/8.0.5": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-OP6umVGxc0Z0MvZQBVigj4/U31Pw72ITihDWP9WiWDm+q5aoe0GaJivsfYGq53o6dxH7DcXWiCTl7+0o2CGdmg==",
-      "path": "system.text.encodings.web/7.0.0",
-      "hashPath": "system.text.encodings.web.7.0.0.nupkg.sha512"
-    },
-    "System.Text.Json/7.0.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-DaGSsVqKsn/ia6RG8frjwmJonfos0srquhw09TlT8KRw5I43E+4gs+/bZj4K0vShJ5H9imCuXupb4RmS+dBy3w==",
-      "path": "system.text.json/7.0.0",
-      "hashPath": "system.text.json.7.0.0.nupkg.sha512"
+      "sha512": "sha512-0f1B50Ss7rqxXiaBJyzUu9bWFOO2/zSlifZ/UNMdiIpDYe4cY4LQQicP4nirK1OS31I43rn062UIJ1Q9bpmHpg==",
+      "path": "system.text.json/8.0.5",
+      "hashPath": "system.text.json.8.0.5.nupkg.sha512"
     }
   }
 }

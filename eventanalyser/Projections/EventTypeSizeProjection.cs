@@ -42,16 +42,10 @@ public record EventTypeSizeState : State {
     }
 }
 
-
-
 public class EventTypeSizeProjection : Projection<EventTypeSizeState> {
-    private readonly Options Options;
+    public EventTypeSizeProjection(Options options) : base(options) {
 
-    public EventTypeSizeProjection(EventTypeSizeState state, Options options) : base(state) {
-        Options = options;
-        //TODO: Not sure how we init state yet
     }
-
     protected override async Task<EventTypeSizeState> HandleEvent(EventTypeSizeState state,
                                                                   ResolvedEvent @event) {
 
