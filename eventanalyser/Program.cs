@@ -11,17 +11,20 @@
     /*
      * Checkpoints
      * Write state after <n> time has elapsed
-     * System Events should be configurable
+     * System Events should be configurable - tie in with event type filtering
 
     Only do this once in ctor:
      Task t = this.DeleteOptions switch {
 
-     * lookm at event type filtering on FromAll 
+     * look at event type filtering on FromAll 
        e.g. var filter = new SubscriptionFilterOptions(
            EventTypeFilter.Prefix("Sale", "SalesTransaction")
             or 
            EventTypeFilter.Regex("^Sales?")
        );
+
+    StartPositionFromDateProjection - testing & cleanup
+
      */
 
     public enum Mode {
@@ -35,7 +38,6 @@
                                              CancellationToken cancellationToken) {
 
             if (options.DeleteOptions != null) {
-                DeleteState state = new();
                 return new StreamRemovalProjection(options, 
                                                    eventStoreClient);
             }
