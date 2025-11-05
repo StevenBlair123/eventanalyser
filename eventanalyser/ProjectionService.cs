@@ -19,7 +19,7 @@ public class ProjectionService {
         this.Options = options;
     }
 
-    public async Task<State> Start(CancellationToken cancellationToken) {
+    public async Task<Result<State>> Start(CancellationToken cancellationToken) {
         //TODO: Will we need config?
         WriteLineHelper.WriteInfo($"Starting projection {this.Projection.GetType().Name}");
 
@@ -38,11 +38,6 @@ public class ProjectionService {
                     var g = fromAll.ToUInt64();
                     WriteLineHelper.WriteWarning($"Commit: {g.commitPosition}");
                     WriteLineHelper.WriteWarning($"Prepare: {g.preparePosition}");
-                }
-
-                if (this.Options.IsTestMode == false) {
-                    WriteLineHelper.WritePrompt($"Press return to start...");
-                    Console.ReadKey();
                 }
 
                 IAsyncEnumerable<StreamMessage>? messages = null;
@@ -131,8 +126,6 @@ public class ProjectionService {
                             break;
                         }
                     }
-
-                    //TODO: Dump final state to console as well?
                 }
 
                 if (state != null) {
@@ -143,7 +136,7 @@ public class ProjectionService {
                 }
             }
             catch(Exception e) {
-                Console.WriteLine(e);
+                return Result.Failure(e.Message);
             }
         }
 

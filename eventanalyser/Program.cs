@@ -6,6 +6,7 @@
     using Microsoft.Extensions.Configuration;
     using Projections;
     using KurrentDB.Client;
+    using SimpleResults;
 
     /*
      * Checkpoints
@@ -64,19 +65,33 @@
             IConfiguration config = builder.Build();
             Options options = Program.GetOptions(config);
 
-            KurrentDBClientSettings settings = KurrentDBClientSettings.Create(options.EventStoreConnectionString);
-            KurrentDBClient eventStoreClient = new(settings); //Use this for deleting streams
+            while (true) {
+                KurrentDBClientSettings settings = KurrentDBClientSettings.Create(options.EventStoreConnectionString);
+                KurrentDBClient eventStoreClient = new(settings); //Use this for deleting streams
 
-            //TODO: DU for different projection config?
-            //Options is too clunky and error prone. Hide this away from user.
-            IProjection projection = InitialiseProjection(options,eventStoreClient,CancellationToken.None);
+                //TODO: DU for different projection config?
+                //Options is too clunky and error prone. Hide this away from user.
+                IProjection projection = InitialiseProjection(options, eventStoreClient, CancellationToken.None);
 
-            ProjectionService projectionService = new(projection, 
-                                                      eventStoreClient, 
-                                                      options);
+                ProjectionService projectionService = new(projection,
+                                                          eventStoreClient,
+                                                          options);
 
-            //TODO: Result?
-            await projectionService.Start(CancellationToken.None);
+                Result<State> result = await projectionService.Start(CancellationToken.None);
+
+                if (result.IsSuccess) {
+                    break;
+                }
+
+                WriteLineHelper.WriteError($"Projection failed: {result.Message}");
+                options = options with {
+                                           ReloadState = true,
+                                           
+                                       };
+
+                //TODO: Should we wait some time before restarting?
+                await Task.Delay(TimeSpan.FromSeconds(10));
+            }
 
             WriteLineHelper.WriteInfo($"Projection finished");
             Console.ReadKey();
