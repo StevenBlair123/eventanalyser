@@ -15,19 +15,16 @@ public record StartPositionFromDateState : State {
 }
 
 public class StartPositionFromDateProjection : Projection<StartPositionFromDateState> {
-    private readonly Options Options;
     Int64 EventCountRead = 0;
     ResolvedEvent? FirstEventOfDay = null;   // To track the first event found for the day
 
     private Position currentPosition; //TODO: Should this be in the state?
 
-    public StartPositionFromDateProjection(Options options) : base(options.ReloadState) {
-        this.Options = options;
+    public StartPositionFromDateProjection(Options options) : base(options) {
         this.State = this.State with {
-                                         TargetDateTime = Options.EventDateFilter.GetValueOrDefault().Date
+                                         TargetDateTime = this.Options.EventDateFilter.GetValueOrDefault().Date
                                      };
     }
-
     public override String GetFormattedName() {
         return $"{this.GetType().Name}";
     }

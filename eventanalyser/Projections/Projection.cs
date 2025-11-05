@@ -2,6 +2,7 @@
 
 using KurrentDB.Client;
 using Newtonsoft.Json;
+using SimpleResults;
 
 public record State {
     public Int64 Count { get; init; }
@@ -25,16 +26,27 @@ public interface IProjection {
 }
 
 public abstract class Projection<TState> : IProjection where TState : State, new() {
+    protected readonly Options Options;
+
     public TState State { get; set; }
-    public Projection(Boolean reloadState = false) {
-        if (reloadState == false) {
+
+    public Projection(Options options) {
+        this.Options = options;
+        if (this.Options.ReloadState == false) {
             State = new TState();
             WriteLineHelper.WriteWarning($"Forcing new state: {this.State.GetType().Name}");
             return;
         }
 
-        State = ProjectionService.LoadState<TState>(this, 
-                                                    CancellationToken.None).Result;
+        Result<TState> result = ProjectionService.LoadState<TState>(this, CancellationToken.None).Result;
+
+        if (result.IsFailed) {
+            WriteLineHelper.WriteWarning($"Failed to load state {result.Message}. Default state will be used.");
+            State = new TState();
+        }
+        else {
+            this.State = result.Data;
+        }
 
         WriteLineHelper.WriteWarning($"Loading state: {this.State.GetType().Name}");
     }

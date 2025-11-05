@@ -43,10 +43,8 @@ public record EventTypeSizeState : State {
 }
 
 public class EventTypeSizeProjection : Projection<EventTypeSizeState> {
-    private readonly Options Options;
+    public EventTypeSizeProjection(Options options) : base(options) {
 
-    public EventTypeSizeProjection(Options options) : base(options.ReloadState) {
-        Options = options;
     }
     protected override async Task<EventTypeSizeState> HandleEvent(EventTypeSizeState state,
                                                                   ResolvedEvent @event) {

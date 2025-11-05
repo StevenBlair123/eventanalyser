@@ -3,6 +3,7 @@
 using KurrentDB.Client;
 using Newtonsoft.Json;
 using Projections;
+using SimpleResults;
 
 public class ProjectionService {
     private readonly IProjection Projection;
@@ -160,15 +161,21 @@ public class ProjectionService {
         await File.WriteAllTextAsync(filePath, json);
     }
 
-    public static async Task<TState> LoadState<TState>(IProjection projection,
-                                                        CancellationToken cancellationToken) where TState : State {
-        String exeDirectory = AppContext.BaseDirectory;
-        String filename = GetStateFilename(projection);
-        String filePath = Path.Combine(exeDirectory, $"{filename}");
+    public static async Task<SimpleResults.Result<TState>> LoadState<TState>(IProjection projection,
+                                                                     CancellationToken cancellationToken) where TState : State {
 
-        String json = await File.ReadAllTextAsync(filePath, cancellationToken);
+        try {
+            String exeDirectory = AppContext.BaseDirectory;
+            String filename = GetStateFilename(projection);
+            String filePath = Path.Combine(exeDirectory, $"{filename}");
 
-        return JsonConvert.DeserializeObject<TState>(json);
+            String json = await File.ReadAllTextAsync(filePath, cancellationToken);
+
+            return JsonConvert.DeserializeObject<TState>(json);
+        }
+        catch(Exception e) {
+            return Result.Failure(e.Message);
+        }
     }
 
     static String GetStateFilename(IProjection projection) {
