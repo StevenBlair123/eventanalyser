@@ -24,9 +24,9 @@ public class ProjectionService {
         WriteLineHelper.WriteInfo($"Starting projection {this.Projection.GetType().Name}");
 
         State state = this.Projection.GetState();
+
         SubscriptionFilterOptions filterOptions = new(EventTypeFilter.ExcludeSystemEvents());
 
-        //TODO: Improve this (signal?)
         while (true) {
             try {
                 FromAll fromAll = this.Options.StartFromPosition switch {

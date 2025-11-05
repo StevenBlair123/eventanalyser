@@ -15,7 +15,6 @@ public record StartPositionFromDateState : State {
 }
 
 public class StartPositionFromDateProjection : Projection<StartPositionFromDateState> {
-    Int64 EventCountRead = 0;
     ResolvedEvent? FirstEventOfDay = null;   // To track the first event found for the day
 
     private Position currentPosition; //TODO: Should this be in the state?
@@ -31,19 +30,9 @@ public class StartPositionFromDateProjection : Projection<StartPositionFromDateS
 
     protected override async Task<StartPositionFromDateState> HandleEvent(StartPositionFromDateState state,
                                                                           ResolvedEvent @event) {
-        EventCountRead++;
         DateTime eventDate = @event.Event.Created;
 
         WriteLineHelper.WriteInfo($"Date: {eventDate.Date.ToString()}");
-
-        //TODO: How do we force a SaveState?
-
-        //TODO: How do we stop?
-        //Boolean keepReading = true;
-
-        //Scenario 1 - we find target date
-        //Scenario 2 - never find target date but events before it
-        //Scenario 3 - never find target date but no events before it
 
         if (this.State.CurrentDateTime == default) {
             //First day
@@ -72,61 +61,8 @@ public class StartPositionFromDateProjection : Projection<StartPositionFromDateS
             };
         }
 
-        
-
-        //this.State.CurrentDateTime = eventDate.Date.Date;
-        //this.State.CommitPositionForCurrentDateTime = @event.OriginalPosition;
-
-        // Check if the event is on the target date
-        //if (eventDate.Date == this.State.TargetDateTime.Date) {
-
-        //    this.State = this.State with {
-        //                                     CurrentDateTime = eventDate.Date,
-        //                                     CommitPositionForCurrentDateTime = @event.OriginalPosition.GetValueOrDefault()
-        //                                 };
-
-        //    //TODO: How do we stop overwriting this now?
-
-
-        //    //this.FirstEventOfDay = @event; // Track the first event found for that day
-        //}
-
-        
-
         //TODO: logging
         Console.WriteLine($"currentPosition: {@event.OriginalPosition.Value.CommitPosition}");
-
-        // If we pass the target date (i.e., the event is earlier than the target date), stop reading
-        //if (eventDate.Date < this.State.TargetDateTime.Date)
-        //{
-        //    // Update the current position to continue from the last event's position
-        //    Position currentPosition = @event.OriginalPosition.GetValueOrDefault();
-
-
-
-        //    if (FirstEventOfDay.HasValue == false)
-        //    {
-        //        FirstEventOfDay = @event; // Track the first event found for that day
-        //    }
-
-        //    //TODO: How to stop
-        //    keepReading = false;  // Stop the outer loop
-
-
-        //    //break;
-        //}
-
-        //// If a matching event was found, print the details
-        //if (firstEventOfDay.HasValue)
-        //{
-        //    var matchedEvent = firstEventOfDay.Value;
-        //    Position? result = firstEventOfDay.Value.OriginalPosition;
-        //    Console.WriteLine($"First event on {firstEventOfDay.Value.Event.Created.ToShortDateString()} is {matchedEvent.Event.EventType} at {matchedEvent.Event.Created}");
-        //    return result;
-        //}
-
-        //Console.WriteLine($"No event found on {targetDate.ToShortDateString()}");
-        //return null;
 
         //TODO: This should be a new state!
         return await Task.FromResult(this.State);
