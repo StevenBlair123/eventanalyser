@@ -1,6 +1,7 @@
 ﻿namespace eventanalyser;
 
 using KurrentDB.Client;
+using Newtonsoft.Json;
 using Projections;
 
 public class ProjectionService {
@@ -20,6 +21,7 @@ public class ProjectionService {
     public async Task<State> Start(CancellationToken cancellationToken) {
         //TODO: Will we need config?
         WriteLineHelper.WriteInfo($"Starting projection {this.Projection.GetType().Name}");
+
         State state = this.Projection.GetState();
         SubscriptionFilterOptions filterOptions = new(EventTypeFilter.ExcludeSystemEvents());
 
@@ -27,10 +29,8 @@ public class ProjectionService {
         while (true) {
             try {
                 FromAll fromAll = this.Options.StartFromPosition switch {
-                    _ when this.Options.StartFromPosition.HasValue => FromAll.After(new Position(this.Options.StartFromPosition.Value, 
-                                                                                                 Options.StartFromPosition.Value)),
+                    _ when state.LastPosition != null => FromAll.After(state.LastPosition),
                     _ => FromAll.Start
-                    //_ => FromAll.After(startPosition.GetValueOrDefault())
                 };
 
                 if (fromAll != FromAll.Start) {
@@ -109,12 +109,13 @@ public class ProjectionService {
                             _ => false
                         };
 
-                        if (shouldCheckpoint || message is StreamMessage.CaughtUp || state.ForceStateSave) {
+                        if (shouldCheckpoint || 
+                            message is StreamMessage.CaughtUp || 
+                            state.ForceStateSave) {
 
                             if (message is StreamMessage.Event sm) {
 
                                 state = state with {
-                                                       LastPosition = sm.ResolvedEvent.OriginalPosition.Value.CommitPosition,
                                                        ForceStateSave = false
                                                    };
                             }
@@ -150,12 +151,27 @@ public class ProjectionService {
     }
 
     private static async Task SaveState<TState>(TState state, IProjection projection) where TState : State {
-        //TODO: Log state to screen / file?
         String json = state.GetStateAsString();
 
         String exeDirectory = AppContext.BaseDirectory;
-        String filePath = Path.Combine(exeDirectory, $"{projection.GetFormattedName()}.txt");
+        String filename = GetStateFilename(projection);
+        String filePath = Path.Combine(exeDirectory, $"{filename}");
 
         await File.WriteAllTextAsync(filePath, json);
+    }
+
+    public static async Task<TState> LoadState<TState>(IProjection projection,
+                                                        CancellationToken cancellationToken) where TState : State {
+        String exeDirectory = AppContext.BaseDirectory;
+        String filename = GetStateFilename(projection);
+        String filePath = Path.Combine(exeDirectory, $"{filename}");
+
+        String json = await File.ReadAllTextAsync(filePath, cancellationToken);
+
+        return JsonConvert.DeserializeObject<TState>(json);
+    }
+
+    static String GetStateFilename(IProjection projection) {
+        return $"{projection.GetFormattedName()}.txt";
     }
 }

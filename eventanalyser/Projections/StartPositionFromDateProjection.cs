@@ -21,11 +21,11 @@ public class StartPositionFromDateProjection : Projection<StartPositionFromDateS
 
     private Position currentPosition; //TODO: Should this be in the state?
 
-    public StartPositionFromDateProjection(StartPositionFromDateState state, Options options) : base(state) {
+    public StartPositionFromDateProjection(Options options) : base(options.ReloadState) {
         this.Options = options;
-        this.State = state with {
-                               TargetDateTime = Options.EventDateFilter.GetValueOrDefault().Date
-                           };
+        this.State = this.State with {
+                                         TargetDateTime = Options.EventDateFilter.GetValueOrDefault().Date
+                                     };
     }
 
     public override String GetFormattedName() {

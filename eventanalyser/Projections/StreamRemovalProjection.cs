@@ -95,10 +95,9 @@ public class StreamRemovalProjection : Projection<DeleteState> {
 
     private readonly KurrentDBClient EventStoreClient;
 
-    public StreamRemovalProjection(DeleteState state,
-                                   DeleteOptions deleteOptions,
-                                   KurrentDBClient eventStoreClient) : base(state) {
-        this.DeleteOptions = deleteOptions;
+    public StreamRemovalProjection(Options options,
+                                   KurrentDBClient eventStoreClient) : base(options.ReloadState) {
+        this.DeleteOptions = options.DeleteOptions;
         this.EventStoreClient = eventStoreClient;
     }
 
