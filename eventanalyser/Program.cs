@@ -23,6 +23,9 @@
             or 
            EventTypeFilter.Regex("^Sales?")
        );
+
+    //If line below is not set, unhandled exception
+    //List<String> eventTypeList = eventTypes.Split(',').ToList();
      */
 
     public enum Mode {

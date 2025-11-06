@@ -11,6 +11,7 @@ public class Support {
     public static String GetDateFromEvent(String json) {
         JObject jObject = JObject.Parse(json);
 
+            //TODO: Perhaops this could be configurable?
         return jObject switch {
             _ when false => null,
             _ when jObject["createdDateTime"] != null => jObject["createdDateTime"].ToString(),
@@ -22,6 +23,7 @@ public class Support {
             _ when jObject["datetime"] != null => jObject["datetime"].ToString(),
             _ when jObject["orderCreatedDateTime"] != null => jObject["orderCreatedDateTime"].ToString(),
             _ when jObject["dt"] != null => jObject["dt"].ToString(),
+            _ when jObject["payload"]["createdAt"] != null => jObject["payload"]["createdAt"].ToString(),
             _ => null
         };
     }
