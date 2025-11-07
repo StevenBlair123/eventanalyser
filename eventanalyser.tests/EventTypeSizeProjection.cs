@@ -3,13 +3,11 @@ using eventanalyser.Projections;
 namespace eventanalyser.tests {
     using Shouldly;
     using System;
-    using System.Text;
     using System.Threading;
-    using EventStore.Client;
     using Microsoft.Extensions.Configuration;
-    using static eventanalyser.Projections.DeleteOptions;
-    using StreamState = Projections.StreamState;
-    using String = System.String;
+    using SimpleResults;
+    using static DeleteOptions;
+    using String = String;
 
     public class ProjectionTests {
         private EventStoreHelper EventStoreHelper;
@@ -27,7 +25,7 @@ namespace eventanalyser.tests {
                                             .AddJsonFile($"Config\\{testName}.json", optional: false);
 
             IConfiguration config = builder.Build();
-            this.Options = eventanalyser.Program.GetOptions(config);
+            this.Options = Program.GetOptions(config);
 
             Options = Options with {
                                        EventStoreConnectionString = DockerHelper.EventStoreClient.ConnectionName,
@@ -70,7 +68,7 @@ namespace eventanalyser.tests {
                                                                                                  }
                                              };
 
-            eventanalyser.Options options = new(DockerHelper.EventStoreClient.ConnectionName, "") {
+            Options options = new(DockerHelper.EventStoreClient.ConnectionName, "") {
                                                                                                       IsTestMode = true
                                                                                                   };
 
@@ -142,6 +140,30 @@ namespace eventanalyser.tests {
 
             var sizeInBytes = eventInfo.SizeInBytes;
             sizeInBytes.ShouldBe(96);
+        }
+
+        [Test]
+        public async Task delete_organisation() {
+            Guid organisationId1 = Guid.Parse("1c01f90c-9710-4c43-a3be-86ca707a18dd");
+            Guid organisationId2 = Guid.Parse("2c01f90c-9710-4c43-a3be-86ca707a18dd");
+
+            var sale1ForOrg1 = await this.EventStoreHelper.WriteSaleEvent(DateTime.Now, organisationId1, false);
+            var sale1ForOrg2 = await this.EventStoreHelper.WriteSaleEvent(DateTime.Now, organisationId2, false);
+
+            StreamRemovalProjection projection = new(this.Options,
+                                                     DockerHelper.EventStoreClient);
+
+            ProjectionService projectionService = new(projection,
+                                                      DockerHelper.EventStoreClient,
+                                                      Options);
+
+            Result<State> finalState = await projectionService.Start(CancellationToken.None);
+
+            var count = await EventStoreHelper.GetEventCountFromStream(sale1ForOrg1.Stream, CancellationToken.None);
+            count.ShouldBe(1);
+
+            count = await EventStoreHelper.GetEventCountFromStream(sale1ForOrg2.Stream, CancellationToken.None);
+            count.ShouldBe(0);
         }
 
         [Test]

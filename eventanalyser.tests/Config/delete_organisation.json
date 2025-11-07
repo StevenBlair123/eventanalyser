@@ -1,0 +1,15 @@
+{
+  "ConnectionStrings": {
+    "EventStoreConnection": "esdb://admin:changeit@127.0.0.1:2113?tls=false&tlsVerifyCert=false"
+  },
+  "AppSettings": {
+    "CheckpointCount": 1000,
+    "IsTestMode": true,
+    "DeleteOptions": {
+      "Type": "DeleteOrganisation",
+      "SafeMode": false,
+      "OrganisationId": "2c01f90c-9710-4c43-a3be-86ca707a18dd"
+    }
+
+  }
+}
