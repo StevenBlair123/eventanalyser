@@ -42,6 +42,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Config\delete_organisation.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Config\safe_mode_is_enabled_by_default.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

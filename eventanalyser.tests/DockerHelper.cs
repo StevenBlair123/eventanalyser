@@ -9,7 +9,6 @@ namespace eventanalyser.tests
     using Ductus.FluentDocker.Model.Containers;
     using Ductus.FluentDocker.Services;
     using Ductus.FluentDocker.Services.Extensions;
-    using EventStore.Client;
     using KurrentDB.Client;
     using Shouldly;
     using SimpleResults;
