@@ -227,17 +227,22 @@ public class StreamRemovalProjection : Projection<DeleteState> {
                     await t;
                 }
 
-                switch (this.DeleteOptions) {
+                String path = Path.Combine($"{AppContext.BaseDirectory}", $"StreamsToDelete", $"{stream}_{this.State.GetType().Name}");
+
+                switch(this.DeleteOptions) {
                     case DeleteStreamBefore:
+                        EnsureFileExists(path);
                         Log($"Deleted stream: {stream}");
                         break;
                     case SetStreamMaxEventCount s:
+                        EnsureFileExists(path);
                         Log($"stream: {stream} max events set to {s.EventCountToKeep}");
                         break;
                 }
+
                 newState = newState with {
-                    DeletedCount = newState.DeletedCount + 1
-                };
+                                             DeletedCount = newState.DeletedCount + 1
+                                         };
 
             return await Task.FromResult(newState);
         }
@@ -246,5 +251,26 @@ public class StreamRemovalProjection : Projection<DeleteState> {
         }
 
         return await Task.FromResult(state);
+    }
+
+    public static Boolean EnsureFileExists(String path) {
+        // Make sure the directory exists (safe and idempotent)
+        String? directory = Path.GetDirectoryName(path);
+        if (!String.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory); // Fast and safe — does nothing if it already exists
+        }
+
+        try
+        {
+            using var fs = new FileStream(path,
+                                          FileMode.CreateNew, // Atomic create, fails if exists
+                                          FileAccess.Write,
+                                          FileShare.Read);
+            return true; // File created
+        } catch (IOException e)
+        {
+            return false; // File already existed (or other minor I/O issue)
+        }
     }
 }
