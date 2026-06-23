@@ -25,7 +25,8 @@
         "runtime": {
           "lib/netstandard2.0/Google.Api.CommonProtos.dll": {
             "assemblyVersion": "2.16.0.0",
-            "fileVersion": "2.16.0.0"
+            "fileVersion": "2.16.0.0",
+            "localPath": "Google.Api.CommonProtos.dll"
           }
         }
       },
@@ -33,7 +34,8 @@
         "runtime": {
           "lib/net5.0/Google.Protobuf.dll": {
             "assemblyVersion": "3.32.1.0",
-            "fileVersion": "3.32.1.0"
+            "fileVersion": "3.32.1.0",
+            "localPath": "Google.Protobuf.dll"
           }
         }
       },
@@ -41,7 +43,8 @@
         "runtime": {
           "lib/netstandard2.1/Grpc.Core.Api.dll": {
             "assemblyVersion": "2.0.0.0",
-            "fileVersion": "2.71.0.0"
+            "fileVersion": "2.71.0.0",
+            "localPath": "Grpc.Core.Api.dll"
           }
         }
       },
@@ -53,7 +56,8 @@
         "runtime": {
           "lib/net8.0/Grpc.Net.Client.dll": {
             "assemblyVersion": "2.0.0.0",
-            "fileVersion": "2.67.0.0"
+            "fileVersion": "2.67.0.0",
+            "localPath": "Grpc.Net.Client.dll"
           }
         }
       },
@@ -64,7 +68,8 @@
         "runtime": {
           "lib/net8.0/Grpc.Net.Common.dll": {
             "assemblyVersion": "2.0.0.0",
-            "fileVersion": "2.67.0.0"
+            "fileVersion": "2.67.0.0",
+            "localPath": "Grpc.Net.Common.dll"
           }
         }
       },
@@ -76,7 +81,8 @@
         "runtime": {
           "lib/netstandard2.1/Grpc.StatusProto.dll": {
             "assemblyVersion": "2.0.0.0",
-            "fileVersion": "2.71.0.0"
+            "fileVersion": "2.71.0.0",
+            "localPath": "Grpc.StatusProto.dll"
           }
         }
       },
@@ -94,7 +100,8 @@
         "runtime": {
           "lib/net8.0/KurrentDB.Client.dll": {
             "assemblyVersion": "1.1.0.0",
-            "fileVersion": "1.1.0.0"
+            "fileVersion": "1.1.0.0",
+            "localPath": "KurrentDB.Client.dll"
           }
         }
       },
@@ -102,7 +109,8 @@
         "runtime": {
           "lib/netstandard2.1/Microsoft.Bcl.AsyncInterfaces.dll": {
             "assemblyVersion": "6.0.0.0",
-            "fileVersion": "6.0.21.52210"
+            "fileVersion": "6.0.21.52210",
+            "localPath": "Microsoft.Bcl.AsyncInterfaces.dll"
           }
         }
       },
@@ -114,7 +122,8 @@
         "runtime": {
           "lib/net7.0/Microsoft.Extensions.Configuration.dll": {
             "assemblyVersion": "7.0.0.0",
-            "fileVersion": "7.0.22.51805"
+            "fileVersion": "7.0.22.51805",
+            "localPath": "Microsoft.Extensions.Configuration.dll"
           }
         }
       },
@@ -125,7 +134,8 @@
         "runtime": {
           "lib/net7.0/Microsoft.Extensions.Configuration.Abstractions.dll": {
             "assemblyVersion": "7.0.0.0",
-            "fileVersion": "7.0.22.51805"
+            "fileVersion": "7.0.22.51805",
+            "localPath": "Microsoft.Extensions.Configuration.Abstractions.dll"
           }
         }
       },
@@ -136,7 +146,8 @@
         "runtime": {
           "lib/net7.0/Microsoft.Extensions.Configuration.Binder.dll": {
             "assemblyVersion": "7.0.0.0",
-            "fileVersion": "7.0.22.51805"
+            "fileVersion": "7.0.22.51805",
+            "localPath": "Microsoft.Extensions.Configuration.Binder.dll"
           }
         }
       },
@@ -151,7 +162,8 @@
         "runtime": {
           "lib/net7.0/Microsoft.Extensions.Configuration.FileExtensions.dll": {
             "assemblyVersion": "7.0.0.0",
-            "fileVersion": "7.0.22.51805"
+            "fileVersion": "7.0.22.51805",
+            "localPath": "Microsoft.Extensions.Configuration.FileExtensions.dll"
           }
         }
       },
@@ -160,13 +172,13 @@
           "Microsoft.Extensions.Configuration": "7.0.0",
           "Microsoft.Extensions.Configuration.Abstractions": "7.0.0",
           "Microsoft.Extensions.Configuration.FileExtensions": "7.0.0",
-          "Microsoft.Extensions.FileProviders.Abstractions": "7.0.0",
-          "System.Text.Json": "8.0.5"
+          "Microsoft.Extensions.FileProviders.Abstractions": "7.0.0"
         },
         "runtime": {
           "lib/net7.0/Microsoft.Extensions.Configuration.Json.dll": {
             "assemblyVersion": "7.0.0.0",
-            "fileVersion": "7.0.22.51805"
+            "fileVersion": "7.0.22.51805",
+            "localPath": "Microsoft.Extensions.Configuration.Json.dll"
           }
         }
       },
@@ -177,7 +189,8 @@
         "runtime": {
           "lib/net8.0/Microsoft.Extensions.DependencyInjection.dll": {
             "assemblyVersion": "9.0.0.0",
-            "fileVersion": "9.0.24.52809"
+            "fileVersion": "9.0.24.52809",
+            "localPath": "Microsoft.Extensions.DependencyInjection.dll"
           }
         }
       },
@@ -185,7 +198,8 @@
         "runtime": {
           "lib/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
             "assemblyVersion": "9.0.0.0",
-            "fileVersion": "9.0.24.52809"
+            "fileVersion": "9.0.24.52809",
+            "localPath": "Microsoft.Extensions.DependencyInjection.Abstractions.dll"
           }
         }
       },
@@ -196,7 +210,8 @@
         "runtime": {
           "lib/net7.0/Microsoft.Extensions.FileProviders.Abstractions.dll": {
             "assemblyVersion": "7.0.0.0",
-            "fileVersion": "7.0.22.51805"
+            "fileVersion": "7.0.22.51805",
+            "localPath": "Microsoft.Extensions.FileProviders.Abstractions.dll"
           }
         }
       },
@@ -209,7 +224,8 @@
         "runtime": {
           "lib/net7.0/Microsoft.Extensions.FileProviders.Physical.dll": {
             "assemblyVersion": "7.0.0.0",
-            "fileVersion": "7.0.22.51805"
+            "fileVersion": "7.0.22.51805",
+            "localPath": "Microsoft.Extensions.FileProviders.Physical.dll"
           }
         }
       },
@@ -217,7 +233,8 @@
         "runtime": {
           "lib/net7.0/Microsoft.Extensions.FileSystemGlobbing.dll": {
             "assemblyVersion": "7.0.0.0",
-            "fileVersion": "7.0.22.51805"
+            "fileVersion": "7.0.22.51805",
+            "localPath": "Microsoft.Extensions.FileSystemGlobbing.dll"
           }
         }
       },
@@ -230,7 +247,8 @@
         "runtime": {
           "lib/net8.0/Microsoft.Extensions.Logging.dll": {
             "assemblyVersion": "9.0.0.0",
-            "fileVersion": "9.0.24.52809"
+            "fileVersion": "9.0.24.52809",
+            "localPath": "Microsoft.Extensions.Logging.dll"
           }
         }
       },
@@ -242,7 +260,8 @@
         "runtime": {
           "lib/net8.0/Microsoft.Extensions.Logging.Abstractions.dll": {
             "assemblyVersion": "9.0.0.0",
-            "fileVersion": "9.0.24.52809"
+            "fileVersion": "9.0.24.52809",
+            "localPath": "Microsoft.Extensions.Logging.Abstractions.dll"
           }
         }
       },
@@ -254,7 +273,8 @@
         "runtime": {
           "lib/net8.0/Microsoft.Extensions.Options.dll": {
             "assemblyVersion": "9.0.0.0",
-            "fileVersion": "9.0.24.52809"
+            "fileVersion": "9.0.24.52809",
+            "localPath": "Microsoft.Extensions.Options.dll"
           }
         }
       },
@@ -262,7 +282,8 @@
         "runtime": {
           "lib/net8.0/Microsoft.Extensions.Primitives.dll": {
             "assemblyVersion": "9.0.0.0",
-            "fileVersion": "9.0.24.52809"
+            "fileVersion": "9.0.24.52809",
+            "localPath": "Microsoft.Extensions.Primitives.dll"
           }
         }
       },
@@ -270,7 +291,8 @@
         "runtime": {
           "lib/net6.0/Newtonsoft.Json.dll": {
             "assemblyVersion": "13.0.0.0",
-            "fileVersion": "13.0.3.27908"
+            "fileVersion": "13.0.3.27908",
+            "localPath": "Newtonsoft.Json.dll"
           }
         }
       },
@@ -281,23 +303,23 @@
         "runtime": {
           "lib/net8.0/OpenTelemetry.Api.dll": {
             "assemblyVersion": "1.0.0.0",
-            "fileVersion": "1.12.0.1644"
+            "fileVersion": "1.12.0.1644",
+            "localPath": "OpenTelemetry.Api.dll"
           }
         }
       },
       "SimpleResults/4.0.0": {
-        "dependencies": {
-          "System.Text.Json": "8.0.5"
-        },
         "runtime": {
           "lib/netstandard2.0/SimpleResults.dll": {
             "assemblyVersion": "4.0.0.0",
-            "fileVersion": "4.0.0.0"
+            "fileVersion": "4.0.0.0",
+            "localPath": "SimpleResults.dll"
           }
         },
         "resources": {
           "lib/netstandard2.0/es/SimpleResults.resources.dll": {
-            "locale": "es"
+            "locale": "es",
+            "localPath": "es/SimpleResults.resources.dll"
           }
         }
       },
@@ -305,7 +327,8 @@
         "runtime": {
           "lib/net8.0/System.Diagnostics.DiagnosticSource.dll": {
             "assemblyVersion": "9.0.0.0",
-            "fileVersion": "9.0.24.52809"
+            "fileVersion": "9.0.24.52809",
+            "localPath": "System.Diagnostics.DiagnosticSource.dll"
           }
         }
       },
@@ -316,11 +339,11 @@
         "runtime": {
           "lib/net6.0/System.Linq.Async.dll": {
             "assemblyVersion": "6.0.0.0",
-            "fileVersion": "6.0.1.35981"
+            "fileVersion": "6.0.1.35981",
+            "localPath": "System.Linq.Async.dll"
           }
         }
-      },
-      "System.Text.Json/8.0.5": {}
+      }
     }
   },
   "libraries": {
@@ -517,13 +540,6 @@
       "sha512": "sha512-0YhHcaroWpQ9UCot3Pizah7ryAzQhNvobLMSxeDIGmnXfkQn8u5owvpOH0K6EVB+z9L7u6Cc4W17Br/+jyttEQ==",
       "path": "system.linq.async/6.0.1",
       "hashPath": "system.linq.async.6.0.1.nupkg.sha512"
-    },
-    "System.Text.Json/8.0.5": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-0f1B50Ss7rqxXiaBJyzUu9bWFOO2/zSlifZ/UNMdiIpDYe4cY4LQQicP4nirK1OS31I43rn062UIJ1Q9bpmHpg==",
-      "path": "system.text.json/8.0.5",
-      "hashPath": "system.text.json.8.0.5.nupkg.sha512"
     }
   }
 }
