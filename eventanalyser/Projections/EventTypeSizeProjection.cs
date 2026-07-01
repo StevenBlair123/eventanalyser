@@ -65,7 +65,7 @@ public class EventTypeSizeProjection : Projection<EventTypeSizeState> {
         };
 
         String eventTypeKey = @event.IsResolved switch {
-            true => $"$>{@event.Event.EventType}",
+            true => $"$>{@event.Event.EventType}-{@event.OriginalStreamId}",
             _ => @event.OriginalEvent.EventType
         };
 
@@ -80,11 +80,11 @@ public class EventTypeSizeProjection : Projection<EventTypeSizeState> {
         //Previous size calculation was ultimately flawed.
         //The routine below was picked out the ES code base
         //UInt64 newSize = e.SizeInBytes += (UInt64)@event.OriginalEvent.Data.Length;
-        Int64 newSize =SizeOnDisk(eventTypeKey, 
-                                  @event.OriginalEvent.Data.ToArray(), 
-                                  @event.OriginalEvent.Metadata.ToArray(), 
-                                  @event.OriginalStreamId);
-
+        Int64 newSize = SizeOnDisk(eventTypeKey,
+                @event.OriginalEvent.Data.ToArray(),
+                @event.OriginalEvent.Metadata.ToArray(),
+                @event.OriginalStreamId);
+        
         e.SizeInBytes += newSize;
         e.Count += 1;
 

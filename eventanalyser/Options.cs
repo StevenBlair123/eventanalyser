@@ -23,6 +23,11 @@ public record Options {
         get; init;
     }
 
+    public Boolean ExcludeSystemEvents {
+        get;
+        init;
+    }
+
     public Int32 BufferSize {
         get; init;
     }

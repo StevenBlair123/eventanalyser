@@ -25,7 +25,10 @@ public class ProjectionService {
 
         State state = this.Projection.GetState();
 
-        SubscriptionFilterOptions filterOptions = new(EventTypeFilter.ExcludeSystemEvents());
+        SubscriptionFilterOptions filterOptions = Options.ExcludeSystemEvents switch {
+            true => new(EventTypeFilter.ExcludeSystemEvents()),
+            _ => new(EventTypeFilter.None)
+        };
 
         while (true) {
             try {
@@ -67,11 +70,11 @@ public class ProjectionService {
                 }
 
                 await foreach (var message in messages.WithCancellation(cancellationToken)) {
-                    switch(message) {
+                    switch (message) {
                         case StreamMessage.Event(var @event):
                             if (@event.Event == null)
                                 continue;
-
+                            
                             WriteLineHelper.WriteInfo($"In handle {@event.Event.EventType}");
                             state = await this.Projection.Handle(@event);
                             break;
@@ -92,8 +95,8 @@ public class ProjectionService {
                                                        };
                                 }
                             }
-
-                            WriteLineHelper.WriteWarning("AllStreamCheckpointReached");
+                            var g = JsonConvert.SerializeObject(goon);
+                            WriteLineHelper.WriteWarning($"AllStreamCheckpointReached {g}");
                             break;
 
                     }
