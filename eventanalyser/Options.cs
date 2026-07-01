@@ -26,7 +26,7 @@ public record Options {
     public Boolean ExcludeSystemEvents {
         get;
         init;
-    }
+    } = true;
 
     public Int32 BufferSize {
         get; init;
