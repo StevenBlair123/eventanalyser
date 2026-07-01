@@ -30,6 +30,7 @@ namespace eventanalyser.tests {
             Options = Options with {
                                        EventStoreConnectionString = DockerHelper.EventStoreClient.ConnectionName,
                                        IsTestMode = true,
+                                       ExcludeSystemEvents = true
                                    };
         }
 
@@ -74,8 +75,8 @@ namespace eventanalyser.tests {
 
             options = options with {
                                        DeleteOptions = deleteOptions,
-
-                                   };
+          
+            };
             deleteOptions = deleteOptions with {
                 SafeMode = false
             };
@@ -127,7 +128,7 @@ namespace eventanalyser.tests {
             //TODO: Should be a Result
             var result = await projectionService.Start(CancellationToken.None);
 
-            result.ShouldBeOfType<EventTypeSizeState>();
+            result.ShouldBeOfType<Result<State>>();
             EventTypeSizeState finalState = result.Data as EventTypeSizeState;
 
             finalState.EventInfo.Count.ShouldBe(1);
